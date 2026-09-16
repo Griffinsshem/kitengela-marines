@@ -1,0 +1,40 @@
+
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ---- Node / Next.js ----
+node_modules/
+.next/
+out/
+build/
+.vercel/
+*.tsbuildinfo
+next-env.d.ts
+.eslintcache
+
+# ---- Python / Flask ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+instance/
+
+# ---- Local media uploads (dev only; production uses object storage) ----
+api/uploads/
+api/instance/
+
+# ---- OS / editor ----
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
