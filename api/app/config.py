@@ -59,7 +59,10 @@ class Settings(BaseSettings):
         if not self.is_production:
             return self
 
-        for name, value in (("SECRET_KEY", self.SECRET_KEY), ("JWT_SECRET_KEY", self.JWT_SECRET_KEY)):
+        for name, value in (
+            ("SECRET_KEY", self.SECRET_KEY),
+            ("JWT_SECRET_KEY", self.JWT_SECRET_KEY),
+        ):
             lowered = value.lower()
             if len(value) < 32 or any(marker in lowered for marker in PLACEHOLDER_MARKERS):
                 raise ValueError(f"{name} looks like a placeholder or is too short for production.")
@@ -78,4 +81,4 @@ class Settings(BaseSettings):
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
-    return Settings() 
+    return Settings()
