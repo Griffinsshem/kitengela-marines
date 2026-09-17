@@ -46,6 +46,10 @@ def create_app(settings: Settings | None = None) -> Flask:
     app.extensions["settings"] = settings
 
     db.init_app(app)
+    # Imported for its side effect: registers every table on db.metadata so
+    # Flask-Migrate's autogenerate can see them.
+    from app import models  # noqa: F401
+
     migrate.init_app(app, db)
     jwt.init_app(app)
     limiter.init_app(app)

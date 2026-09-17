@@ -38,6 +38,21 @@ def app() -> Iterator[Flask]:
         db.drop_all()
 
 
+@pytest.fixture(autouse=True)
+def _reset_database(app: Flask) -> Iterator[None]:
+    yield
+    with app.app_context():
+        for table in reversed(db.metadata.sorted_tables):
+            db.session.execute(table.delete())
+        db.session.commit()
+
+
+@pytest.fixture
+def session(app: Flask) -> Iterator[object]:
+    with app.app_context():
+        yield db.session
+
+
 @pytest.fixture
 def client(app: Flask) -> FlaskClient:
     return app.test_client()
