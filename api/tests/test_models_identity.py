@@ -60,11 +60,11 @@ def test_email_is_normalised_and_unique(session: object) -> None:
     db.session.commit()
 
     assert db.session.query(User).one().email == "coach@example.com"
-
-    make_user("coach@example.com")
     with pytest.raises(IntegrityError):
-        db.session.commit()
+        make_user("COACH@example.com")
+
     db.session.rollback()
+    assert db.session.query(User).count() == 1
 
 
 @pytest.mark.rbac

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import Boolean, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.extensions import db
+from app.extensions import Base
 from app.models.base import Timestamped, UUIDPrimaryKey, enum_column
 from app.models.enums import TeamCategory, TeamGender
 
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from app.models.identity import TeamMembership
 
 
-class Club(UUIDPrimaryKey, Timestamped, db.Model):
+class Club(UUIDPrimaryKey, Timestamped, Base):
     __tablename__ = "clubs"
 
     name: Mapped[str] = mapped_column(String(120), nullable=False)
@@ -42,7 +42,7 @@ class Club(UUIDPrimaryKey, Timestamped, db.Model):
         return f"<Club {self.slug}>"
 
 
-class Team(UUIDPrimaryKey, Timestamped, db.Model):
+class Team(UUIDPrimaryKey, Timestamped, Base):
     """A side that plays fixtures under the club's identity."""
 
     __tablename__ = "teams"

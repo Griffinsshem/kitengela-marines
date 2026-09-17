@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Table, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
-from app.extensions import db
+from app.extensions import Base, db
 from app.models.base import Timestamped, UUIDPrimaryKey, enum_column
 from app.models.enums import MembershipCapacity, RoleKey
 from app.security.passwords import hash_password, verify_password
@@ -24,7 +24,7 @@ user_roles = Table(
 )
 
 
-class Role(UUIDPrimaryKey, Timestamped, db.Model):
+class Role(UUIDPrimaryKey, Timestamped, Base):
     __tablename__ = "roles"
 
     key: Mapped[RoleKey] = mapped_column(
@@ -39,7 +39,7 @@ class Role(UUIDPrimaryKey, Timestamped, db.Model):
         return f"<Role {self.key}>"
 
 
-class User(UUIDPrimaryKey, Timestamped, db.Model):
+class User(UUIDPrimaryKey, Timestamped, Base):
     __tablename__ = "users"
 
     email: Mapped[str] = mapped_column(String(254), nullable=False, unique=True, index=True)
@@ -87,7 +87,7 @@ class User(UUIDPrimaryKey, Timestamped, db.Model):
         return f"<User {self.email}>"
 
 
-class TeamMembership(UUIDPrimaryKey, Timestamped, db.Model):
+class TeamMembership(UUIDPrimaryKey, Timestamped, Base):
     __tablename__ = "team_memberships"
     __table_args__ = (
         UniqueConstraint("user_id", "team_id", "capacity", name="uq_membership_user_team_capacity"),
