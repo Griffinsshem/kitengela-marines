@@ -34,3 +34,9 @@ markers = [
     "auth: authentication and authorisation behaviour",
     "rbac: role-based access control enforcement",
 ]
+
+# These packages ship no type stubs. Ignoring their imports keeps mypy strict
+# about our own code instead of drowning it in library noise.
+[[tool.mypy.overrides]]
+module = ["flask_cors.*", "flask_limiter.*", "flask_migrate.*", "cloudinary.*", "slugify.*"]
+ignore_missing_imports = true
