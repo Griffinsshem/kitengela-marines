@@ -19,7 +19,6 @@ TEST_DATABASE_URL = os.environ.get(
 
 @pytest.fixture(scope="session")
 def app() -> Iterator[Flask]:
-    # _env_file=None keeps the developer's .env out of the test run entirely.
     settings = Settings(
         _env_file=None,
         APP_ENV="development",

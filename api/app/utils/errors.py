@@ -56,17 +56,20 @@ def register_error_handlers(app: Flask) -> None:
     @app.errorhandler(HTTPException)
     def handle_http_exception(error: HTTPException) -> tuple[Response, int]:
         code = (error.name or "error").lower().replace(" ", "_")
-        return jsonify(_envelope(code, error.description or error.name or "Error")), error.code or 500
+        message = error.description or error.name or "Error"
+        return jsonify(_envelope(code, message)), error.code or 500
 
     @app.errorhandler(SQLAlchemyError)
     def handle_database_error(error: SQLAlchemyError) -> tuple[Response, int]:
         incident = uuid.uuid4().hex[:12]
         # exc_info carries the SQL; it goes to the log, never to the response.
         logger.error("database error incident=%s", incident, exc_info=error)
-        return jsonify(_envelope("database_error", "A database error occurred.", {"incident": incident})), 500
+        body = _envelope("database_error", "A database error occurred.", {"incident": incident})
+        return jsonify(body), 500
 
     @app.errorhandler(Exception)
     def handle_unexpected_error(error: Exception) -> tuple[Response, int]:
         incident = uuid.uuid4().hex[:12]
         logger.error("unhandled error incident=%s", incident, exc_info=error)
-        return jsonify(_envelope("internal_error", "An unexpected error occurred.", {"incident": incident})), 500
+        body = _envelope("internal_error", "An unexpected error occurred.", {"incident": incident})
+        return jsonify(body), 500
