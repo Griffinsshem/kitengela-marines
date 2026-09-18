@@ -6,7 +6,11 @@ silently never gets a migration.
 """
 
 from app.models.club import Club, Team
+from app.models.competition import Competition, Opponent, Season
 from app.models.enums import (
+    FixtureStatus,
+    LineupRole,
+    MatchEventType,
     MembershipCapacity,
     PlayerPosition,
     PlayerStatus,
@@ -14,18 +18,30 @@ from app.models.enums import (
     StaffRole,
     TeamCategory,
     TeamGender,
+    Venue,
 )
 from app.models.identity import Role, TeamMembership, User, user_roles
+from app.models.match import Fixture, LeagueStanding, MatchEvent, PlayerMatchStatistic
 from app.models.people import Player, StaffMember
 
 __all__ = [
     "Club",
+    "Competition",
+    "Fixture",
+    "FixtureStatus",
+    "LeagueStanding",
+    "LineupRole",
+    "MatchEvent",
+    "MatchEventType",
     "MembershipCapacity",
+    "Opponent",
     "Player",
+    "PlayerMatchStatistic",
     "PlayerPosition",
     "PlayerStatus",
     "Role",
     "RoleKey",
+    "Season",
     "StaffMember",
     "StaffRole",
     "Team",
@@ -33,5 +49,6 @@ __all__ = [
     "TeamGender",
     "TeamMembership",
     "User",
+    "Venue",
     "user_roles",
 ]

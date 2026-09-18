@@ -79,3 +79,40 @@ class StaffRole(StrEnum):
     TEAM_MANAGER = "team_manager"
     PHYSIO = "physio"
     OFFICIAL = "official"
+
+
+class FixtureStatus(StrEnum):
+    """Where a fixture is in its lifecycle.
+
+    The public fixtures list is everything not yet COMPLETED; the results list
+    is everything COMPLETED. One row, two views, no duplicate entry.
+    """
+
+    SCHEDULED = "scheduled"
+    POSTPONED = "postponed"
+    CANCELLED = "cancelled"
+    COMPLETED = "completed"
+    ABANDONED = "abandoned"
+
+
+class Venue(StrEnum):
+    HOME = "home"
+    AWAY = "away"
+    NEUTRAL = "neutral"
+
+
+class MatchEventType(StrEnum):
+    GOAL = "goal"
+    OWN_GOAL = "own_goal"
+    PENALTY_SCORED = "penalty_scored"
+    PENALTY_MISSED = "penalty_missed"
+    YELLOW_CARD = "yellow_card"
+    SECOND_YELLOW = "second_yellow"
+    RED_CARD = "red_card"
+    SUBSTITUTION = "substitution"
+
+
+class LineupRole(StrEnum):
+    STARTER = "starter"
+    SUBSTITUTE = "substitute"
+    UNUSED_SUBSTITUTE = "unused_substitute"
