@@ -12,6 +12,7 @@ from app.models.enums import TeamCategory, TeamGender
 
 if TYPE_CHECKING:
     from app.models.identity import TeamMembership
+    from app.models.people import Player, StaffMember
 
 
 class Club(UUIDPrimaryKey, Timestamped, Base):
@@ -74,6 +75,14 @@ class Team(UUIDPrimaryKey, Timestamped, Base):
     club: Mapped[Club] = relationship(back_populates="teams")
     memberships: Mapped[list[TeamMembership]] = relationship(
         back_populates="team", cascade="all, delete-orphan"
+    )
+    players: Mapped[list[Player]] = relationship(
+        back_populates="team",
+        order_by="(Player.squad_number.is_(None), Player.squad_number)",
+    )
+    staff_members: Mapped[list[StaffMember]] = relationship(
+        back_populates="team",
+        order_by="StaffMember.display_order",
     )
 
     def __repr__(self) -> str:

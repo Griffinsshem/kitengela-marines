@@ -14,6 +14,7 @@ from app.security.passwords import hash_password, verify_password
 
 if TYPE_CHECKING:
     from app.models.club import Team
+    from app.models.people import Player
 
 
 user_roles = Table(
@@ -53,6 +54,7 @@ class User(UUIDPrimaryKey, Timestamped, Base):
     memberships: Mapped[list[TeamMembership]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    player_profile: Mapped[Player | None] = relationship(back_populates="user")
 
     @validates("email")
     def _normalise_email(self, _key: str, value: str) -> str:

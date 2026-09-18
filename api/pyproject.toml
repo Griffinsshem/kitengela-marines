@@ -2,6 +2,9 @@
 target-version = "py312"
 line-length = 100
 src = ["app", "tests"]
+# Alembic writes migrations in its own style. Reformatting generated files
+# creates churn on every migration and changes nothing that runs.
+extend-exclude = ["migrations/versions"]
 
 [tool.ruff.lint]
 select = [

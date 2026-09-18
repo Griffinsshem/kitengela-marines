@@ -47,3 +47,35 @@ class MembershipCapacity(StrEnum):
     COACH = "coach"
     PLAYER = "player"
     STAFF = "staff"
+
+
+class PlayerPosition(StrEnum):
+    """Primary position. Drives squad-page grouping and which stats are shown."""
+
+    GOALKEEPER = "goalkeeper"
+    DEFENDER = "defender"
+    MIDFIELDER = "midfielder"
+    FORWARD = "forward"
+
+
+class PlayerStatus(StrEnum):
+    """Squad status.
+
+    FORMER is distinct from INACTIVE: a former player stays in the record for
+    historical match data but leaves the current squad listing.
+    """
+
+    ACTIVE = "active"
+    INJURED = "injured"
+    SUSPENDED = "suspended"
+    INACTIVE = "inactive"
+    FORMER = "former"
+
+
+class StaffRole(StrEnum):
+    HEAD_COACH = "head_coach"
+    ASSISTANT_COACH = "assistant_coach"
+    GOALKEEPING_COACH = "goalkeeping_coach"
+    TEAM_MANAGER = "team_manager"
+    PHYSIO = "physio"
+    OFFICIAL = "official"
