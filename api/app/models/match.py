@@ -94,6 +94,7 @@ class Fixture(UUIDPrimaryKey, Timestamped, Base):
     team: Mapped[Team] = relationship()
     opponent: Mapped[Opponent] = relationship()
     season: Mapped[Season] = relationship(back_populates="fixtures")
+    player_of_the_match: Mapped[Player | None] = relationship(foreign_keys=[player_of_the_match_id])
 
     events: Mapped[list[MatchEvent]] = relationship(
         back_populates="fixture",
