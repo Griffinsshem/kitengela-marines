@@ -31,6 +31,7 @@ class Settings(BaseSettings):
 
     CORS_ORIGINS: str = ""
     RATELIMIT_STORAGE_URI: str = "memory://"
+    RATELIMIT_ENABLED: bool = True
 
     MEDIA_BACKEND: Literal["local", "cloudinary"] = "local"
     MEDIA_LOCAL_DIR: str = "uploads"

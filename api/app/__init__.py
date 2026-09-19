@@ -7,6 +7,7 @@ from datetime import timedelta
 from flask import Flask
 
 from app.api.v1 import api_v1
+from app.cli import register_cli
 from app.config import Settings, get_settings
 from app.extensions import cors, db, jwt, limiter, migrate
 from app.utils.errors import register_error_handlers
@@ -40,14 +41,13 @@ def create_app(settings: Settings | None = None) -> Flask:
         JWT_REFRESH_COOKIE_PATH="/api/v1/auth/refresh",
         RATELIMIT_STORAGE_URI=settings.RATELIMIT_STORAGE_URI,
         RATELIMIT_HEADERS_ENABLED=True,
+        RATELIMIT_ENABLED=settings.RATELIMIT_ENABLED,
         MAX_CONTENT_LENGTH=settings.MEDIA_MAX_UPLOAD_MB * 1024 * 1024,
         PROPAGATE_EXCEPTIONS=False,
     )
     app.extensions["settings"] = settings
 
     db.init_app(app)
-    # Imported for its side effect: registers every table on db.metadata so
-    # Flask-Migrate's autogenerate can see them.
     from app import models  # noqa: F401
 
     migrate.init_app(app, db)
@@ -61,6 +61,7 @@ def create_app(settings: Settings | None = None) -> Flask:
     )
 
     register_error_handlers(app)
+    register_cli(app)
     app.register_blueprint(api_v1)
 
     return app

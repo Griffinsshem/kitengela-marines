@@ -9,7 +9,7 @@ from flask.testing import FlaskClient
 
 from app import create_app
 from app.config import Settings
-from app.extensions import db
+from app.extensions import db, limiter
 
 TEST_DATABASE_URL = os.environ.get(
     "TEST_DATABASE_URL",
@@ -22,11 +22,12 @@ def app() -> Iterator[Flask]:
     settings = Settings(
         _env_file=None,
         APP_ENV="development",
-        SECRET_KEY="test-only-secret-key",
-        JWT_SECRET_KEY="test-only-jwt-secret-key",
+        SECRET_KEY="test-only-secret-key-padded-to-at-least-thirty-two-bytes",
+        JWT_SECRET_KEY="test-only-jwt-secret-key-padded-to-at-least-thirty-two-bytes",
         DATABASE_URL=TEST_DATABASE_URL,
         JWT_COOKIE_SECURE=False,
         CORS_ORIGINS="http://localhost:3000",
+        RATELIMIT_ENABLED=False,
     )
     application = create_app(settings)
 
@@ -56,3 +57,29 @@ def session(app: Flask) -> Iterator[object]:
 @pytest.fixture
 def client(app: Flask) -> FlaskClient:
     return app.test_client()
+
+
+@pytest.fixture
+def rate_limited_client() -> Iterator[FlaskClient]:
+    """A client whose app was built with rate limiting switched on.
+
+    The limiter only initialises its storage when enabled at init_app time, so
+    this cannot be toggled on the shared session app — it needs its own.
+    """
+    settings = Settings(
+        _env_file=None,
+        APP_ENV="development",
+        SECRET_KEY="test-only-secret-key-padded-to-at-least-thirty-two-bytes",
+        JWT_SECRET_KEY="test-only-jwt-secret-key-padded-to-at-least-thirty-two-bytes",
+        DATABASE_URL=TEST_DATABASE_URL,
+        JWT_COOKIE_SECURE=False,
+        CORS_ORIGINS="http://localhost:3000",
+        RATELIMIT_ENABLED=True,
+    )
+    application = create_app(settings)
+
+    with application.app_context():
+        limiter.reset()
+        yield application.test_client()
+        limiter.reset()
+        limiter.enabled = False
