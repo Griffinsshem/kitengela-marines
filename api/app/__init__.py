@@ -10,6 +10,7 @@ from app.api.v1 import api_v1
 from app.cli import register_cli
 from app.config import Settings, get_settings
 from app.extensions import cors, db, jwt, limiter, migrate
+from app.security.jwt_errors import register_jwt_error_handlers
 from app.utils.errors import register_error_handlers
 
 
@@ -52,6 +53,7 @@ def create_app(settings: Settings | None = None) -> Flask:
 
     migrate.init_app(app, db)
     jwt.init_app(app)
+    register_jwt_error_handlers()
     limiter.init_app(app)
     cors.init_app(
         app,

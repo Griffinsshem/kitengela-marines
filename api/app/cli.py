@@ -58,3 +58,19 @@ def register_cli(app: Flask) -> None:
         click.echo(f"Club Admin created: {user.email}")
 
     app.cli.add_command(seed)
+
+    @seed.command("reset-password")
+    @click.option("--email", required=True)
+    @click.password_option(confirmation_prompt=True)
+    def reset_password(email: str, password: str) -> None:
+        """Set a new password for an existing user."""
+        if len(password) < 12:
+            raise click.ClickException("Password must be at least 12 characters.")
+
+        user = db.session.query(User).filter_by(email=email.lower()).first()
+        if user is None:
+            raise click.ClickException("No user with that email.")
+
+        user.set_password(password)
+        db.session.commit()
+        click.echo(f"Password updated for {user.email}")

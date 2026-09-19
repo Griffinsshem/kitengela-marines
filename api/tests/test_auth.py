@@ -251,3 +251,24 @@ def test_login_is_rate_limited(
 
     assert 429 in statuses
     assert statuses.count(401) == 5
+
+
+@pytest.mark.auth
+def test_missing_token_uses_the_standard_error_envelope(client: FlaskClient) -> None:
+    response = client.get("/api/v1/auth/me")
+
+    assert response.status_code == 401
+    body = response.get_json()
+    assert body["error"]["code"] == "unauthenticated"
+    # The extension's own {"msg": ...} shape must not reach a client, and the
+    # message must not enumerate which auth mechanisms were checked.
+    assert "msg" not in body
+    assert "cookie" not in body["error"]["message"].lower()
+
+
+@pytest.mark.auth
+def test_malformed_token_is_rejected_without_detail(client: FlaskClient) -> None:
+    response = client.get("/api/v1/auth/me", headers={"Authorization": "Bearer not-a-real-token"})
+
+    assert response.status_code == 401
+    assert response.get_json()["error"]["code"] == "unauthenticated"
