@@ -236,3 +236,37 @@ def serialize_standing(standing: LeagueStanding) -> dict[str, Any]:
         "goal_difference": standing.goal_difference,
         "points": standing.points,
     }
+
+
+def serialize_player_admin(player: Player) -> dict[str, Any]:
+    """Full record including club-internal fields.
+
+    Only reachable behind VIEW_PRIVATE_PLAYER_DATA with team scope. Kept
+    separate from serialize_player so the public shape cannot drift into
+    exposing these by accident.
+    """
+    data = serialize_player(player)
+    data.update(
+        {
+            "team_id": str(player.team_id),
+            "date_of_birth": _safe(player.date_of_birth),
+            "phone": player.phone,
+            "emergency_contact_name": player.emergency_contact_name,
+            "emergency_contact_phone": player.emergency_contact_phone,
+            "internal_notes": player.internal_notes,
+        }
+    )
+    return data
+
+
+def serialize_staff_admin(member: StaffMember) -> dict[str, Any]:
+    data = serialize_staff(member)
+    data.update(
+        {
+            "team_id": str(member.team_id) if member.team_id else None,
+            "is_active": member.is_active,
+            "email": member.email,
+            "phone": member.phone,
+        }
+    )
+    return data

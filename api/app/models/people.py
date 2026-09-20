@@ -13,7 +13,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, object_session, relationship
 
 from app.extensions import Base
 from app.models.base import Timestamped, UUIDPrimaryKey, enum_column
@@ -97,6 +97,20 @@ class Player(UUIDPrimaryKey, Timestamped, Base):
     @property
     def is_in_current_squad(self) -> bool:
         return self.status not in (PlayerStatus.FORMER, PlayerStatus.INACTIVE)
+
+    @property
+    def statistics_count(self) -> int:
+        """How many matches this player has a record in.
+
+        Guards deletion: a player with match history must be retired, not
+        removed, or the club's own records would change retroactively.
+        """
+        from app.models.match import PlayerMatchStatistic
+
+        session = object_session(self)
+        if session is None:
+            return 0
+        return session.query(PlayerMatchStatistic).filter_by(player_id=self.id).count()
 
     def public_dict(self) -> dict[str, object]:
         """Serialise only the allow-listed columns, plus derived display names."""
