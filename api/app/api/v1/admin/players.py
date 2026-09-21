@@ -34,6 +34,7 @@ from app.security.authorization import (
     require_team_scope,
 )
 from app.security.permissions import Capability
+from app.services.audit import set_action
 from app.utils.errors import ApiError
 from app.utils.slugs import unique_slug
 
@@ -119,6 +120,7 @@ def transfer_player(player_id: str) -> tuple[Response, int]:
     """
     player = _load_player(player_id)
     payload = parse_body(PlayerTransfer)
+    set_action("player.transferred")
     destination = _load_team(payload.team_id)
 
     user = current_user()
@@ -170,6 +172,7 @@ def delete_player(player_id: str) -> tuple[Response, int]:
     the club's history. Mark them FORMER instead.
     """
     player = _load_player(player_id)
+    set_action("player.deleted")
 
     if player.statistics_count > 0:
         raise ApiError(

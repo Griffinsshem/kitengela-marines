@@ -5,6 +5,7 @@ only sees tables that have been imported, so a model missing from this list
 silently never gets a migration.
 """
 
+from app.models.audit import AuditLog
 from app.models.club import Club, Team
 from app.models.competition import Competition, Opponent, Season
 from app.models.enums import (
@@ -25,6 +26,7 @@ from app.models.match import Fixture, LeagueStanding, MatchEvent, PlayerMatchSta
 from app.models.people import Player, StaffMember
 
 __all__ = [
+    "AuditLog",
     "Club",
     "Competition",
     "Fixture",

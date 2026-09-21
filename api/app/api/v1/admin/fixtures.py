@@ -30,6 +30,7 @@ from app.schemas.admin import (
 from app.schemas.public import serialize_fixture, serialize_match_detail, serialize_standing
 from app.security.authorization import current_user, require_capability, require_team_scope
 from app.security.permissions import Capability
+from app.services.audit import set_action
 from app.services.results import record_result
 from app.utils.errors import ApiError
 from app.utils.slugs import unique_slug
@@ -213,6 +214,7 @@ def enter_result(fixture_id: str) -> tuple[Response, int]:
     """
     fixture = _load_fixture(fixture_id)
     require_team_scope(current_user(), Capability.MANAGE_RESULTS, fixture.team_id)
+    set_action("result.recorded")
 
     if fixture.status in (FixtureStatus.CANCELLED, FixtureStatus.ABANDONED):
         raise ApiError(
@@ -236,6 +238,7 @@ def delete_fixture(fixture_id: str) -> tuple[Response, int]:
     change, not a deletion.
     """
     fixture = _load_fixture(fixture_id)
+    set_action("fixture.deleted")
 
     if fixture.status == FixtureStatus.COMPLETED:
         raise ApiError(
@@ -264,6 +267,7 @@ def replace_standings() -> tuple[Response, int]:
     that does not add up is worse than no table at all.
     """
     payload = parse_body(StandingsReplace)
+    set_action("standings.replaced")
 
     season = db.session.get(Season, payload.season_id)
     if season is None:

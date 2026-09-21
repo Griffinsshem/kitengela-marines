@@ -9,6 +9,7 @@ from flask.cli import AppGroup
 from app.extensions import db
 from app.models.enums import RoleKey
 from app.models.identity import Role, User
+from app.services.audit import set_action
 
 ROLE_LABELS: dict[RoleKey, str] = {
     RoleKey.CLUB_ADMIN: "Club Admin",
@@ -53,6 +54,8 @@ def register_cli(app: Flask) -> None:
         user.set_password(password)
         user.roles.append(role)
         db.session.add(user)
+
+        set_action("user.bootstrapped")
         db.session.commit()
 
         click.echo(f"Club Admin created: {user.email}")
