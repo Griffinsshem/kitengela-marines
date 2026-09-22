@@ -93,6 +93,12 @@
     -webkit-text-size-adjust: 100%;
   }
 
+  /* The mobile menu is a modal <dialog>. Locking the page behind it stops the
+  content scrolling underneath a full-screen menu on phones. */
+  html:has(dialog[open]) {
+    overflow: hidden;
+  }
+
   body {
     background-color: var(--color-chalk);
     color: var(--color-pitch);

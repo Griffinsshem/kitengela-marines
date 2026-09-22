@@ -62,7 +62,7 @@ export default function DesignPage() {
   if (process.env.NODE_ENV === "production") notFound();
 
   return (
-    <main className="mx-auto max-w-5xl px-5 py-12 sm:px-8">
+    <div className="mx-auto max-w-5xl px-5 py-12 sm:px-8">
       <h1 className="font-display text-headline font-extrabold uppercase">Design system</h1>
       <p className="mt-3 max-w-prose text-muted">
         Development reference. Compare these swatches against the kit photos; this page is not
@@ -148,6 +148,6 @@ export default function DesignPage() {
           ))}
         </div>
       </section>
-    </main>
+    </div>
   );
 }
