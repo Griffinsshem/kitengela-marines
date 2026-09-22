@@ -37,6 +37,13 @@ class Settings(BaseSettings):
     MEDIA_LOCAL_DIR: str = "uploads"
     MEDIA_MAX_UPLOAD_MB: int = Field(default=8, ge=1, le=50)
 
+    # Public origin of this API, used to build URLs for locally stored media.
+    API_PUBLIC_URL: str = "http://localhost:5000"
+
+    CLOUDINARY_CLOUD_NAME: str = ""
+    CLOUDINARY_API_KEY: str = ""
+    CLOUDINARY_API_SECRET: str = ""
+
     @property
     def is_production(self) -> bool:
         return self.APP_ENV == "production"
@@ -76,6 +83,15 @@ class Settings(BaseSettings):
 
         if not self.JWT_COOKIE_SECURE:
             raise ValueError("JWT_COOKIE_SECURE must be true in production.")
+
+        # Render wipes its disk on every deploy, so local media storage in
+        # production means losing every photo the club has uploaded.
+        if self.MEDIA_BACKEND != "cloudinary":
+            raise ValueError("MEDIA_BACKEND must be 'cloudinary' in production.")
+        if not (
+            self.CLOUDINARY_CLOUD_NAME and self.CLOUDINARY_API_KEY and self.CLOUDINARY_API_SECRET
+        ):
+            raise ValueError("Cloudinary credentials are required in production.")
 
         return self
 

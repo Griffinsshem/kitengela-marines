@@ -39,6 +39,7 @@ AUDITED: dict[str, str] = {
     "seasons": "season",
     "articles": "article",
     "article_categories": "article_category",
+    "media_assets": "media_asset",
 }
 
 # Never recorded, even as a field name that changed.

@@ -6,12 +6,14 @@ from datetime import timedelta
 
 from flask import Flask
 
+from app.api.media import media_bp
 from app.api.v1 import api_v1
 from app.cli import register_cli
 from app.config import Settings, get_settings
 from app.extensions import cors, db, jwt, limiter, migrate
 from app.security.jwt_errors import register_jwt_error_handlers
 from app.services.audit import register_audit_listener
+from app.storage import get_storage
 from app.utils.errors import register_error_handlers
 
 
@@ -67,5 +69,10 @@ def create_app(settings: Settings | None = None) -> Flask:
     register_error_handlers(app)
     register_cli(app)
     app.register_blueprint(api_v1)
+
+    if settings.MEDIA_BACKEND == "local":
+        with app.app_context():
+            get_storage()  # builds the driver so the serving route can find it
+        app.register_blueprint(media_bp)
 
     return app

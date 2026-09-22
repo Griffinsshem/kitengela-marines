@@ -14,7 +14,9 @@ const contentSecurityPolicy = [
   // never used in production, so the production policy never allows it.
   `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' blob: data: https://res.cloudinary.com https://i.ytimg.com",
+  `img-src 'self' blob: data: https://res.cloudinary.com https://i.ytimg.com${
+    process.env.NODE_ENV === "development" ? " http://localhost:5000" : ""
+  }`,
   "font-src 'self' data:",
   `connect-src 'self' ${apiOrigin}`,
   // Match highlights are embedded, never self-hosted.
@@ -34,6 +36,10 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "res.cloudinary.com" },
       { protocol: "https", hostname: "i.ytimg.com" },
+      // Development only: images served by the local Flask API.
+      ...(process.env.NODE_ENV === "development"
+        ? ([{ protocol: "http", hostname: "localhost", port: "5000" }] as const)
+        : []),
     ],
     formats: ["image/avif", "image/webp"],
     // Tuned to the breakpoints the layout actually uses, not Next.js defaults.

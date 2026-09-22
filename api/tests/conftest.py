@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import os
+import shutil
+import tempfile
 from collections.abc import Iterator
 
 import pytest
@@ -28,6 +30,7 @@ def app() -> Iterator[Flask]:
         JWT_COOKIE_SECURE=False,
         CORS_ORIGINS="http://localhost:3000",
         RATELIMIT_ENABLED=False,
+        MEDIA_LOCAL_DIR=tempfile.mkdtemp(prefix="marines-media-"),
     )
     application = create_app(settings)
 
@@ -37,6 +40,7 @@ def app() -> Iterator[Flask]:
         yield application
         db.session.remove()
         db.drop_all()
+    shutil.rmtree(settings.MEDIA_LOCAL_DIR, ignore_errors=True)
 
 
 @pytest.fixture(autouse=True)

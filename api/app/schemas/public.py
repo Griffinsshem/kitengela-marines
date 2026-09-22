@@ -15,6 +15,7 @@ from app.models.club import Club, Team
 from app.models.competition import Opponent, Season
 from app.models.enums import LineupRole, PlayerPosition
 from app.models.match import Fixture, LeagueStanding, MatchEvent, PlayerMatchStatistic
+from app.models.media import MediaAsset
 from app.models.news import Article
 from app.models.people import Player, StaffMember
 from app.utils.sanitize import sanitize_html
@@ -307,6 +308,32 @@ def serialize_article_admin(article: Article) -> dict[str, Any]:
             "fixture_id": str(article.fixture_id) if article.fixture_id else None,
             "created_at": _safe(article.created_at),
             "updated_at": _safe(article.updated_at),
+        }
+    )
+    return data
+
+
+def serialize_media_asset(asset: MediaAsset) -> dict[str, Any]:
+    # width and height let the frontend reserve space before the image loads,
+    # so galleries do not jump around as photos arrive.
+    return {
+        "url": asset.url,
+        "alt": asset.alt_text,
+        "caption": asset.caption,
+        "width": asset.width,
+        "height": asset.height,
+    }
+
+
+def serialize_media_asset_admin(asset: MediaAsset) -> dict[str, Any]:
+    data = serialize_media_asset(asset)
+    data.update(
+        {
+            "id": str(asset.id),
+            "storage_key": asset.storage_key,
+            "content_type": asset.content_type,
+            "byte_size": asset.byte_size,
+            "created_at": _safe(asset.created_at),
         }
     )
     return data
