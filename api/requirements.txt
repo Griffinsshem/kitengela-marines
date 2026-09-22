@@ -21,7 +21,7 @@ Flask-Limiter==4.1.1
 pydantic==2.13.5
 pydantic-settings==2.15.0
 email-validator==2.3.0
-bleach==6.4.0
+nh3==0.3.7
 python-slugify==9.0.0
 
 # ---- Media storage (abstraction gets a Cloudinary driver) ----

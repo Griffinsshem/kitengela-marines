@@ -11,6 +11,9 @@ from typing import Any
 
 from app.extensions import db
 from app.models import (
+    Article,
+    ArticleCategory,
+    ArticleStatus,
     Club,
     Competition,
     Fixture,
@@ -131,6 +134,33 @@ def fixture(team_record: Team, season_record: Season, **kwargs: Any) -> Fixture:
         venue=kwargs.pop("venue", Venue.HOME),
         kickoff_at=kwargs.pop("kickoff_at", datetime(2026, 10, 3, 15, 0, tzinfo=UTC)),
         status=kwargs.pop("status", FixtureStatus.SCHEDULED),
+        **kwargs,
+    )
+    db.session.add(record)
+    db.session.flush()
+    return record
+
+
+def article_category(name: str = "Club News", **kwargs: Any) -> ArticleCategory:
+    record = ArticleCategory(
+        name=name,
+        slug=kwargs.pop("slug", name.lower().replace(" ", "-")),
+        **kwargs,
+    )
+    db.session.add(record)
+    db.session.flush()
+    return record
+
+
+def article(
+    category_record: ArticleCategory, title: str = "Test Article", **kwargs: Any
+) -> Article:
+    record = Article(
+        title=title,
+        slug=kwargs.pop("slug", title.lower().replace(" ", "-")),
+        category_id=category_record.id,
+        body_html=kwargs.pop("body_html", "<p>Body text.</p>"),
+        status=kwargs.pop("status", ArticleStatus.DRAFT),
         **kwargs,
     )
     db.session.add(record)

@@ -116,3 +116,15 @@ class LineupRole(StrEnum):
     STARTER = "starter"
     SUBSTITUTE = "substitute"
     UNUSED_SUBSTITUTE = "unused_substitute"
+
+
+class ArticleStatus(StrEnum):
+    """Publication state.
+
+    A published article with a future published_at is scheduled: it stays out
+    of every public response until that moment, so match-day content can be
+    prepared in advance.
+    """
+
+    DRAFT = "draft"
+    PUBLISHED = "published"

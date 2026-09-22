@@ -16,7 +16,7 @@ import uuid
 from datetime import date, datetime
 from typing import ClassVar, Self
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.models.enums import (
     FixtureStatus,
@@ -356,3 +356,43 @@ class StandingsReplace(StrictModel):
         if len(set(clubs)) != len(clubs):
             raise ValueError("Each club may appear once in the table.")
         return self
+
+
+# --- News ------------------------------------------------------------------
+
+# Roughly fifteen thousand words: far beyond any match report, small enough
+# that nobody can post a multi-megabyte body.
+MAX_BODY_CHARS = 100_000
+
+
+class ArticleCreate(StrictModel):
+    title: str = Field(min_length=1, max_length=200)
+    summary: str | None = Field(default=None, max_length=300)
+    body_html: str = Field(default="", max_length=MAX_BODY_CHARS)
+    category_id: uuid.UUID
+    team_id: uuid.UUID | None = None
+    fixture_id: uuid.UUID | None = None
+    byline: str | None = Field(default=None, max_length=160)
+
+    # author_id, slug, status and published_at are absent by design. The author
+    # comes from the token, the slug from the title, and publication goes
+    # through its own endpoint and its own capability.
+
+
+class ArticleUpdate(StrictModel):
+    NON_NULLABLE: ClassVar[frozenset[str]] = frozenset({"title", "body_html", "category_id"})
+
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+    summary: str | None = Field(default=None, max_length=300)
+    body_html: str | None = Field(default=None, max_length=MAX_BODY_CHARS)
+    category_id: uuid.UUID | None = None
+    team_id: uuid.UUID | None = None
+    fixture_id: uuid.UUID | None = None
+    byline: str | None = Field(default=None, max_length=160)
+
+
+class ArticlePublish(StrictModel):
+    # Timezone-aware only. A naive "15:00" would be read as server time — UTC
+    # on Render — and a report meant for 15:00 in Kenya would go live at 18:00.
+    # Omitted means publish now.
+    published_at: AwareDatetime | None = None

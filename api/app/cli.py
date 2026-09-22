@@ -9,7 +9,9 @@ from flask.cli import AppGroup
 from app.extensions import db
 from app.models.enums import RoleKey
 from app.models.identity import Role, User
+from app.models.news import ArticleCategory
 from app.services.audit import set_action
+from app.utils.slugs import make_slug
 
 ROLE_LABELS: dict[RoleKey, str] = {
     RoleKey.CLUB_ADMIN: "Club Admin",
@@ -19,6 +21,16 @@ ROLE_LABELS: dict[RoleKey, str] = {
     RoleKey.PLAYER: "Player",
     RoleKey.SUPPORTER: "Supporter",
 }
+
+# The categories named in the club brief. More can be added later as data.
+ARTICLE_CATEGORIES: tuple[str, ...] = (
+    "Club News",
+    "First Team",
+    "Marines Starlets",
+    "Match Reports",
+    "Community",
+    "Announcements",
+)
 
 
 def register_cli(app: Flask) -> None:
@@ -34,6 +46,18 @@ def register_cli(app: Flask) -> None:
                 created += 1
         db.session.commit()
         click.echo(f"Roles seeded. {created} created.")
+
+    @seed.command("categories")
+    def seed_categories() -> None:
+        """Insert any missing news categories. Safe to run repeatedly."""
+        created = 0
+        for order, name in enumerate(ARTICLE_CATEGORIES):
+            slug = make_slug(name)
+            if db.session.query(ArticleCategory).filter_by(slug=slug).first() is None:
+                db.session.add(ArticleCategory(name=name, slug=slug, display_order=order))
+                created += 1
+        db.session.commit()
+        click.echo(f"Categories seeded. {created} created.")
 
     @seed.command("admin")
     @click.option("--email", required=True)

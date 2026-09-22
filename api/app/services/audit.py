@@ -37,6 +37,8 @@ AUDITED: dict[str, str] = {
     "league_standings": "league_standing",
     "competitions": "competition",
     "seasons": "season",
+    "articles": "article",
+    "article_categories": "article_category",
 }
 
 # Never recorded, even as a field name that changed.

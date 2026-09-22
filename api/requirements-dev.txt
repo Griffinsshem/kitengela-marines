@@ -5,4 +5,4 @@ pytest-cov==7.1.0
 factory-boy==3.3.3
 ruff==0.16.7
 mypy==2.3.1
-types-bleach==6.4.0.20260728
+

@@ -15,7 +15,9 @@ from app.models.club import Club, Team
 from app.models.competition import Opponent, Season
 from app.models.enums import LineupRole, PlayerPosition
 from app.models.match import Fixture, LeagueStanding, MatchEvent, PlayerMatchStatistic
+from app.models.news import Article
 from app.models.people import Player, StaffMember
+from app.utils.sanitize import sanitize_html
 
 
 def _safe(value: Any) -> Any:
@@ -267,6 +269,44 @@ def serialize_staff_admin(member: StaffMember) -> dict[str, Any]:
             "is_active": member.is_active,
             "email": member.email,
             "phone": member.phone,
+        }
+    )
+    return data
+
+
+def serialize_article_summary(article: Article) -> dict[str, Any]:
+    return {
+        "slug": article.slug,
+        "title": article.title,
+        "summary": article.summary,
+        "published_at": _safe(article.published_at),
+        "category": {"name": article.category.name, "slug": article.category.slug},
+        "team": team_ref(article.team) if article.team is not None else None,
+        "author": article.display_author,
+    }
+
+
+def serialize_article(article: Article) -> dict[str, Any]:
+    data = serialize_article_summary(article)
+    # Sanitised again on the way out, not only on the way in. If the allow-list
+    # is ever tightened, content saved under the old rules is cleaned too.
+    data["body_html"] = sanitize_html(article.body_html)
+    data["fixture"] = {"slug": article.fixture.slug} if article.fixture is not None else None
+    return data
+
+
+def serialize_article_admin(article: Article) -> dict[str, Any]:
+    data = serialize_article(article)
+    data.update(
+        {
+            "id": str(article.id),
+            "status": article.status,
+            "byline": article.byline,
+            "category_id": str(article.category_id),
+            "team_id": str(article.team_id) if article.team_id else None,
+            "fixture_id": str(article.fixture_id) if article.fixture_id else None,
+            "created_at": _safe(article.created_at),
+            "updated_at": _safe(article.updated_at),
         }
     )
     return data
