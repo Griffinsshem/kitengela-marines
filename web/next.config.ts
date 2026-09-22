@@ -10,7 +10,9 @@ const apiOrigin = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 const contentSecurityPolicy = [
   "default-src 'self'",
   // Next.js injects inline bootstrap scripts; 'unsafe-inline' is required.
-  "script-src 'self' 'unsafe-inline'",
+  // React's development build needs eval() to reconstruct call stacks. It is
+  // never used in production, so the production policy never allows it.
+  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' blob: data: https://res.cloudinary.com https://i.ytimg.com",
   "font-src 'self' data:",

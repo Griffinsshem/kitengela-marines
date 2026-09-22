@@ -1,1 +1,126 @@
 @import "tailwindcss";
+
+/*
+ * Kitengela Marines design tokens.
+ * Every colour's source (specified, sampled, derived or provisional) is
+ * recorded in docs/design-system.md. Change a value there and here together.
+ */
+
+@theme static {
+  /* Only club colours exist. Removing Tailwind's default palette means nobody
+     can reach for slate-500 and drift off-brand. */
+  --color-*: initial;
+
+  /* Neutrals. Pitch is the home green darkened to near-black, so dark sections
+     read as a floodlit pitch rather than generic black. */
+  --color-pitch: #011e0f;
+  --color-chalk: #ffffff;
+  --color-turf: #eef3f0;
+  --color-line: #d5ded8;
+  --color-muted: #4f6459;
+
+  /* Marines Men */
+  --color-men-green: #03994b; /* sampled: patterned home kit */
+  --color-men-green-bright: #03ca29; /* sampled: solid green kit */
+  --color-men-green-ink: #02783b; /* derived: green text on chalk, 5.6:1 */
+  --color-men-yellow: #f1b40f; /* sampled: yellow kit */
+  --color-men-gold: #c7a84a; /* specified: gold kit */
+
+  /* Marines Starlets */
+  --color-starlets-blue: #4a5bab; /* sampled: pattern, collar and cuffs */
+  --color-starlets-blue-glow: #949fd1; /* derived: blue text on pitch, 6.2:1 */
+  --color-starlets-pink: #eb8ae7; /* PROVISIONAL: from an edited photo */
+  --color-starlets-black: #000000; /* assumed: sample carried a blue cast */
+
+  /* Type scale. Display sizes are fluid so a phone and a desktop both get a
+     poster-scale headline without a breakpoint jump. */
+  --text-meta: 0.8125rem;
+  --text-meta--line-height: 1.25rem;
+  --text-headline: clamp(1.75rem, 1.35rem + 1.8vw, 2.75rem);
+  --text-headline--line-height: 1;
+  --text-headline--letter-spacing: 0.01em;
+  --text-display: clamp(3rem, 1.9rem + 5.4vw, 6.5rem);
+  --text-display--line-height: 0.88;
+  --text-display--letter-spacing: 0.005em;
+  --text-score: clamp(3.5rem, 2.2rem + 6.5vw, 8rem);
+  --text-score--line-height: 0.85;
+
+  /* Controls are nearly square. Imagery and editorial blocks have no radius. */
+  --radius-control: 2px;
+
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Runtime-resolved tokens. `inline` makes utilities reference the variable
+   directly, so the value is decided by the nearest data-team scope. */
+@theme inline {
+  --font-display: var(--font-big-shoulders), "Arial Narrow", sans-serif;
+  --font-sans: var(--font-barlow), system-ui, sans-serif;
+
+  --color-accent: var(--team-accent);
+  --color-accent-ink: var(--team-accent-ink);
+  --color-accent-glow: var(--team-accent-glow);
+  --color-highlight: var(--team-highlight);
+  --color-on-highlight: var(--team-on-highlight);
+}
+
+/*
+ * Team scopes. Components ask for a role, never a team colour, so switching
+ * between the men's side and Starlets changes accents and nothing else.
+ * The club scope uses the men's colours: the brief's core identity is green,
+ * yellow and gold. Revisit when the crest file arrives.
+ */
+:root,
+[data-team="club"],
+[data-team="marines-men"] {
+  --team-accent: var(--color-men-green);
+  --team-accent-ink: var(--color-men-green-ink);
+  --team-accent-glow: var(--color-men-gold);
+  --team-highlight: var(--color-men-yellow);
+  --team-on-highlight: var(--color-pitch);
+}
+
+[data-team="starlets"] {
+  --team-accent: var(--color-starlets-blue);
+  --team-accent-ink: var(--color-starlets-blue);
+  --team-accent-glow: var(--color-starlets-blue-glow);
+  --team-highlight: var(--color-starlets-pink);
+  --team-on-highlight: var(--color-pitch);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-chalk);
+    color: var(--color-pitch);
+    font-family: var(--font-sans);
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Two-tone ring: the chalk band shows on dark surfaces, the pitch outline on
+     light ones, so focus is visible everywhere without per-surface overrides. */
+  :focus-visible {
+    outline: 2px solid var(--color-pitch);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px var(--color-chalk);
+  }
+
+  ::selection {
+    background-color: var(--team-highlight);
+    color: var(--team-on-highlight);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
