@@ -420,3 +420,41 @@ def test_only_club_admin_manages_club_wide_staff(
         headers=headers,
     )
     assert club_wide.status_code == 403
+
+
+def test_required_field_cannot_be_patched_to_null(
+    session: object, client: FlaskClient, roles: dict[RoleKey, Role]
+) -> None:
+    team = factories.team()
+    player = factories.player(team, "Named", "Player")
+    make_user("admin@example.com", RoleKey.CLUB_ADMIN)
+    db.session.commit()
+
+    response = client.patch(
+        f"/api/v1/admin/players/{player.id}",
+        json={"first_name": None},
+        headers=auth(client, "admin@example.com"),
+    )
+
+    # A validation error naming the field, not a 409 from the database.
+    assert response.status_code == 422
+    assert "first_name cannot be null" in str(response.get_json()["error"])
+
+
+def test_nullable_field_can_be_cleared(
+    session: object, client: FlaskClient, roles: dict[RoleKey, Role]
+) -> None:
+    team = factories.team()
+    player = factories.player(team, "Named", "Player", biography="Old text")
+    make_user("admin@example.com", RoleKey.CLUB_ADMIN)
+    db.session.commit()
+
+    response = client.patch(
+        f"/api/v1/admin/players/{player.id}",
+        json={"biography": None},
+        headers=auth(client, "admin@example.com"),
+    )
+
+    assert response.status_code == 200
+    db.session.refresh(player)
+    assert player.biography is None

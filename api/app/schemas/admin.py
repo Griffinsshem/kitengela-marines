@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import date, datetime
+from typing import ClassVar, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -36,6 +37,18 @@ OPTIONAL_URL = Field(default=None, max_length=500)
 class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
+    # Fields a PATCH may omit but must not send as null, because the column
+    # behind them is NOT NULL. Without this, {"first_name": null} passes
+    # validation, fails at the database, and surfaces as a misleading 409.
+    NON_NULLABLE: ClassVar[frozenset[str]] = frozenset()
+
+    @model_validator(mode="after")
+    def _reject_explicit_nulls(self) -> Self:
+        for field in sorted(self.NON_NULLABLE & self.model_fields_set):
+            if getattr(self, field) is None:
+                raise ValueError(f"{field} cannot be null.")
+        return self
+
 
 # --- Teams -----------------------------------------------------------------
 
@@ -52,6 +65,9 @@ class TeamCreate(StrictModel):
 
 
 class TeamUpdate(StrictModel):
+    NON_NULLABLE: ClassVar[frozenset[str]] = frozenset(
+        {"name", "short_name", "category", "gender", "accent_key", "is_active", "display_order"}
+    )
     name: str | None = Field(default=None, min_length=1, max_length=120)
     short_name: str | None = Field(default=None, min_length=1, max_length=60)
     category: TeamCategory | None = None
@@ -97,6 +113,9 @@ class PlayerCreate(StrictModel):
 
 
 class PlayerUpdate(StrictModel):
+    NON_NULLABLE: ClassVar[frozenset[str]] = frozenset(
+        {"first_name", "last_name", "position", "status"}
+    )
     first_name: str | None = Field(default=None, min_length=1, max_length=80)
     last_name: str | None = Field(default=None, min_length=1, max_length=80)
     known_as: str | None = Field(default=None, max_length=120)
@@ -152,6 +171,9 @@ class StaffCreate(StrictModel):
 
 
 class StaffUpdate(StrictModel):
+    NON_NULLABLE: ClassVar[frozenset[str]] = frozenset(
+        {"first_name", "last_name", "role", "is_active", "display_order"}
+    )
     first_name: str | None = Field(default=None, min_length=1, max_length=80)
     last_name: str | None = Field(default=None, min_length=1, max_length=80)
     role: StaffRole | None = None
@@ -214,6 +236,7 @@ class FixtureCreate(StrictModel):
 
 
 class FixtureUpdate(StrictModel):
+    NON_NULLABLE: ClassVar[frozenset[str]] = frozenset({"opponent_id", "venue", "status"})
     """Scheduling changes only. Results go through the result endpoint."""
 
     opponent_id: uuid.UUID | None = None
