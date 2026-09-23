@@ -33,7 +33,9 @@ from app.models.enums import (
     PlayerPosition,
     PlayerStatus,
     SocialPlatform,
+    SponsorTier,
     StaffRole,
+    SubmissionStatus,
     SupportMethodKind,
     TeamCategory,
     TeamGender,
@@ -572,3 +574,53 @@ class SupportMethodUpdate(StrictModel):
     instructions: str | None = None
     is_active: bool | None = None
     display_order: int | None = Field(default=None, ge=0, le=99)
+
+
+# --- Sponsors --------------------------------------------------------------
+
+
+class SponsorCreate(StrictModel):
+    name: str = Field(min_length=1, max_length=160)
+    website_url: str | None = Field(default=None, max_length=400)
+    description: str | None = None
+    tier: SponsorTier = SponsorTier.COMMUNITY
+    logo_asset_id: uuid.UUID | None = None
+    partnership_since: date | None = None
+    is_active: bool = True
+    display_order: int = Field(default=0, ge=0, le=99)
+
+    @field_validator("website_url")
+    @classmethod
+    def _https_only(cls, value: str | None) -> str | None:
+        # The link sits on the club's site; it should not downgrade a visitor
+        # to an unencrypted connection.
+        if value is not None and not value.startswith("https://"):
+            raise ValueError("A sponsor website must be an https link.")
+        return value
+
+
+class SponsorUpdate(StrictModel):
+    NON_NULLABLE: ClassVar[frozenset[str]] = frozenset(
+        {"name", "tier", "is_active", "display_order"}
+    )
+
+    name: str | None = Field(default=None, min_length=1, max_length=160)
+    website_url: str | None = Field(default=None, max_length=400)
+    description: str | None = None
+    tier: SponsorTier | None = None
+    logo_asset_id: uuid.UUID | None = None
+    partnership_since: date | None = None
+    is_active: bool | None = None
+    display_order: int | None = Field(default=None, ge=0, le=99)
+
+
+class SubmissionUpdate(StrictModel):
+    """What the club records about handling a message.
+
+    The message itself is never editable: it is what somebody sent.
+    """
+
+    NON_NULLABLE: ClassVar[frozenset[str]] = frozenset({"status"})
+
+    status: SubmissionStatus | None = None
+    internal_note: str | None = Field(default=None, max_length=2000)

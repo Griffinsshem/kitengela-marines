@@ -153,3 +153,27 @@ class SupportMethodKind(StrEnum):
     BANK_TRANSFER = "bank_transfer"
     IN_KIND = "in_kind"
     OTHER = "other"
+
+
+class SponsorTier(StrEnum):
+    """Levels the club can offer. Named by prominence, not by price."""
+
+    PRINCIPAL = "principal"
+    OFFICIAL = "official"
+    SUPPORTING = "supporting"
+    COMMUNITY = "community"
+
+
+class SubmissionKind(StrEnum):
+    CONTACT = "contact"
+    PARTNERSHIP = "partnership"
+
+
+class SubmissionStatus(StrEnum):
+    """Where the club has got to with a message."""
+
+    NEW = "new"
+    READ = "read"
+    REPLIED = "replied"
+    SPAM = "spam"
+    CLOSED = "closed"

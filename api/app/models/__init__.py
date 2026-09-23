@@ -18,7 +18,10 @@ from app.models.enums import (
     PlayerStatus,
     RoleKey,
     SocialPlatform,
+    SponsorTier,
     StaffRole,
+    SubmissionKind,
+    SubmissionStatus,
     SupportMethodKind,
     TeamCategory,
     TeamGender,
@@ -28,6 +31,7 @@ from app.models.identity import Role, TeamMembership, User, user_roles
 from app.models.match import Fixture, LeagueStanding, MatchEvent, PlayerMatchStatistic
 from app.models.media import Gallery, GalleryItem, MediaAsset, Video
 from app.models.news import Article, ArticleCategory
+from app.models.outreach import Sponsor, Submission
 from app.models.people import Player, StaffMember
 
 __all__ = [
@@ -57,16 +61,21 @@ __all__ = [
     "Season",
     "SocialLink",
     "SocialPlatform",
-    "SupportMethod",
-    "SupportMethodKind",
+    "Sponsor",
+    "SponsorTier",
     "StaffMember",
     "StaffRole",
+    "Submission",
+    "SubmissionKind",
+    "SubmissionStatus",
+    "SupportMethod",
+    "SupportMethodKind",
     "Team",
     "TeamCategory",
     "TeamGender",
     "TeamMembership",
     "User",
+    "user_roles",
     "Venue",
     "Video",
-    "user_roles",
 ]

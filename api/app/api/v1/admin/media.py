@@ -18,6 +18,7 @@ from app.api.v1.admin._helpers import not_found, parse_uuid
 from app.extensions import db, limiter
 from app.models.media import Gallery, GalleryItem, MediaAsset
 from app.models.news import Article
+from app.models.outreach import Sponsor
 from app.schemas.public import serialize_media_asset_admin
 from app.security.authorization import current_user, require_capability
 from app.security.permissions import Capability
@@ -149,6 +150,8 @@ def delete_media_asset(asset_id: str) -> tuple[Response, int]:
         uses.append("a gallery cover")
     if db.session.query(Article).filter_by(featured_image_id=asset.id).first() is not None:
         uses.append("an article")
+    if db.session.query(Sponsor).filter_by(logo_asset_id=asset.id).first() is not None:
+        uses.append("a sponsor logo")
     if uses:
         raise ApiError(
             f"This photo is used by {' and '.join(uses)}. Remove it there first.",

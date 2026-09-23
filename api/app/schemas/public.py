@@ -17,6 +17,7 @@ from app.models.enums import LineupRole, PlayerPosition
 from app.models.match import Fixture, LeagueStanding, MatchEvent, PlayerMatchStatistic
 from app.models.media import Gallery, GalleryItem, MediaAsset, Video
 from app.models.news import Article
+from app.models.outreach import Sponsor, Submission
 from app.models.people import Player, StaffMember
 from app.utils.sanitize import sanitize_html
 
@@ -445,3 +446,51 @@ def serialize_social_link_admin(link: SocialLink) -> dict[str, Any]:
         {"id": str(link.id), "is_active": link.is_active, "display_order": link.display_order}
     )
     return data
+
+
+def serialize_sponsor(sponsor: Sponsor) -> dict[str, Any]:
+    return {
+        "name": sponsor.name,
+        "slug": sponsor.slug,
+        "website_url": sponsor.website_url,
+        "description": sponsor.description,
+        "tier": sponsor.tier,
+        "logo": (
+            serialize_media_asset(sponsor.logo_asset) if sponsor.logo_asset is not None else None
+        ),
+    }
+
+
+def serialize_sponsor_admin(sponsor: Sponsor) -> dict[str, Any]:
+    data = serialize_sponsor(sponsor)
+    data.update(
+        {
+            "id": str(sponsor.id),
+            "is_active": sponsor.is_active,
+            "display_order": sponsor.display_order,
+            "logo_asset_id": str(sponsor.logo_asset_id) if sponsor.logo_asset_id else None,
+            "partnership_since": _safe(sponsor.partnership_since),
+        }
+    )
+    return data
+
+
+def serialize_submission(submission: Submission) -> dict[str, Any]:
+    """Admin-only. Every text field here was typed by a stranger and must be
+    rendered as text, never as HTML."""
+    return {
+        "id": str(submission.id),
+        "kind": submission.kind,
+        "status": submission.status,
+        "name": submission.name,
+        "email": submission.email,
+        "phone": submission.phone,
+        "subject": submission.subject,
+        "message": submission.message,
+        "organisation": submission.organisation,
+        "interest": submission.interest,
+        "internal_note": submission.internal_note,
+        "handled_by": submission.handled_by.full_name if submission.handled_by else None,
+        "handled_at": _safe(submission.handled_at),
+        "created_at": _safe(submission.created_at),
+    }

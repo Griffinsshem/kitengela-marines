@@ -45,6 +45,7 @@ AUDITED: dict[str, str] = {
     "videos": "video",
     "social_links": "social_link",
     "support_methods": "support_method",
+    "sponsors": "sponsor",
 }
 
 # Never recorded, even as a field name that changed.
