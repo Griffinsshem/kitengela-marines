@@ -11,7 +11,7 @@ import uuid
 from datetime import date, datetime
 from typing import Any
 
-from app.models.club import Club, Team
+from app.models.club import Club, SocialLink, SupportMethod, Team
 from app.models.competition import Opponent, Season
 from app.models.enums import LineupRole, PlayerPosition
 from app.models.match import Fixture, LeagueStanding, MatchEvent, PlayerMatchStatistic
@@ -408,5 +408,40 @@ def serialize_video_admin(video: Video) -> dict[str, Any]:
             "team_id": str(video.team_id) if video.team_id else None,
             "fixture_id": str(video.fixture_id) if video.fixture_id else None,
         }
+    )
+    return data
+
+
+def serialize_social_link(link: SocialLink) -> dict[str, Any]:
+    return {"platform": link.platform, "url": link.url, "handle": link.handle}
+
+
+def serialize_support_method(method: SupportMethod) -> dict[str, Any]:
+    return {
+        "name": method.name,
+        "kind": method.kind,
+        "account_label": method.account_label,
+        "account_value": method.account_value,
+        "account_name": method.account_name,
+        "instructions": method.instructions,
+    }
+
+
+def serialize_support_method_admin(method: SupportMethod) -> dict[str, Any]:
+    data = serialize_support_method(method)
+    data.update(
+        {
+            "id": str(method.id),
+            "is_active": method.is_active,
+            "display_order": method.display_order,
+        }
+    )
+    return data
+
+
+def serialize_social_link_admin(link: SocialLink) -> dict[str, Any]:
+    data = serialize_social_link(link)
+    data.update(
+        {"id": str(link.id), "is_active": link.is_active, "display_order": link.display_order}
     )
     return data

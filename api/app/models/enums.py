@@ -128,3 +128,28 @@ class ArticleStatus(StrEnum):
 
     DRAFT = "draft"
     PUBLISHED = "published"
+
+
+class SocialPlatform(StrEnum):
+    FACEBOOK = "facebook"
+    X = "x"
+    INSTAGRAM = "instagram"
+    YOUTUBE = "youtube"
+    TIKTOK = "tiktok"
+    WHATSAPP = "whatsapp"
+    LINKEDIN = "linkedin"
+
+
+class SupportMethodKind(StrEnum):
+    """How supporters can give.
+
+    M-Pesa is separated by type because a paybill, a till and a send-money
+    number are entered differently by the person paying.
+    """
+
+    MPESA_PAYBILL = "mpesa_paybill"
+    MPESA_TILL = "mpesa_till"
+    MPESA_SEND_MONEY = "mpesa_send_money"
+    BANK_TRANSFER = "bank_transfer"
+    IN_KIND = "in_kind"
+    OTHER = "other"

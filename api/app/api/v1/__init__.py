@@ -17,4 +17,5 @@ from app.api.v1 import health as _health  # noqa: E402,F401
 from app.api.v1 import media as _media  # noqa: E402,F401
 from app.api.v1 import news as _news  # noqa: E402,F401
 from app.api.v1 import public as _public  # noqa: E402,F401
+from app.api.v1 import support as _support  # noqa: E402,F401
 from app.api.v1.admin import _admin_routes  # noqa: E402,F401

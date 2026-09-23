@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from functools import lru_cache
 from typing import Literal
 
@@ -83,6 +84,11 @@ class Settings(BaseSettings):
 
         if not self.JWT_COOKIE_SECURE:
             raise ValueError("JWT_COOKIE_SECURE must be true in production.")
+
+        # A cheap hash profile is for tests. In production it would leave every
+        # password an order of magnitude easier to crack.
+        if os.environ.get("PASSWORD_HASHING") == "fast":
+            raise ValueError("PASSWORD_HASHING=fast is a test-only setting.")
 
         # Render wipes its disk on every deploy, so local media storage in
         # production means losing every photo the club has uploaded.

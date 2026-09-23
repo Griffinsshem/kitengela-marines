@@ -16,7 +16,15 @@ import uuid
 from datetime import date, datetime
 from typing import ClassVar, Self
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+    AwareDatetime,
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 from app.models.enums import (
     FixtureStatus,
@@ -24,11 +32,14 @@ from app.models.enums import (
     MatchEventType,
     PlayerPosition,
     PlayerStatus,
+    SocialPlatform,
     StaffRole,
+    SupportMethodKind,
     TeamCategory,
     TeamGender,
     Venue,
 )
+from app.utils.social import is_valid_social_url
 
 NAME = Field(min_length=1, max_length=80)
 OPTIONAL_URL = Field(default=None, max_length=500)
@@ -469,3 +480,95 @@ class VideoUpdate(StrictModel):
     team_id: uuid.UUID | None = None
     fixture_id: uuid.UUID | None = None
     is_published: bool | None = None
+
+
+# --- Club profile, social links and support --------------------------------
+
+CURRENT_YEAR = date.today().year
+
+
+class ClubUpsert(StrictModel):
+    """The club's details. One record, replaced whole.
+
+    The slug is absent: it is generated from the name on first save and then
+    fixed, because it is in the public URL.
+    """
+
+    name: str = Field(min_length=1, max_length=120)
+    short_name: str = Field(min_length=1, max_length=60)
+    founded_year: int | None = Field(default=None, ge=1900, le=CURRENT_YEAR)
+    home_ground: str | None = Field(default=None, max_length=160)
+    town: str | None = Field(default=None, max_length=120)
+    county: str | None = Field(default=None, max_length=120)
+    contact_email: EmailStr | None = None
+    contact_phone: str | None = Field(default=None, max_length=32, pattern=r"^[0-9+()\s-]*$")
+    summary: str | None = None
+    mission: str | None = None
+
+
+class SocialLinkCreate(StrictModel):
+    platform: SocialPlatform
+    url: str = Field(min_length=1, max_length=400)
+    handle: str | None = Field(default=None, max_length=120)
+    is_active: bool = True
+    display_order: int = Field(default=0, ge=0, le=99)
+
+    @model_validator(mode="after")
+    def _url_belongs_to_the_platform(self) -> Self:
+        if not is_valid_social_url(self.platform, self.url):
+            raise ValueError("The URL must be an https link on that platform's own domain.")
+        return self
+
+
+class SocialLinkUpdate(StrictModel):
+    NON_NULLABLE: ClassVar[frozenset[str]] = frozenset(
+        {"platform", "url", "is_active", "display_order"}
+    )
+
+    platform: SocialPlatform | None = None
+    url: str | None = Field(default=None, min_length=1, max_length=400)
+    handle: str | None = Field(default=None, max_length=120)
+    is_active: bool | None = None
+    display_order: int | None = Field(default=None, ge=0, le=99)
+
+    # The platform/URL pair is rechecked in the route: either field alone
+    # changes what pair ends up stored, and a validator here sees only one.
+
+
+class SupportMethodCreate(StrictModel):
+    name: str = Field(min_length=1, max_length=120)
+    kind: SupportMethodKind
+    account_label: str | None = Field(default=None, max_length=60)
+    account_value: str | None = Field(default=None, max_length=60)
+    account_name: str | None = Field(default=None, max_length=160)
+    instructions: str | None = None
+    is_active: bool = False
+    display_order: int = Field(default=0, ge=0, le=99)
+
+    @model_validator(mode="after")
+    def _payment_methods_need_a_destination(self) -> Self:
+        needs_value = {
+            SupportMethodKind.MPESA_PAYBILL,
+            SupportMethodKind.MPESA_TILL,
+            SupportMethodKind.MPESA_SEND_MONEY,
+            SupportMethodKind.BANK_TRANSFER,
+        }
+        # A published paybill with no number is a dead end for the supporter.
+        if self.kind in needs_value and not self.account_value:
+            raise ValueError("A payment method needs an account_value.")
+        return self
+
+
+class SupportMethodUpdate(StrictModel):
+    NON_NULLABLE: ClassVar[frozenset[str]] = frozenset(
+        {"name", "kind", "is_active", "display_order"}
+    )
+
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    kind: SupportMethodKind | None = None
+    account_label: str | None = Field(default=None, max_length=60)
+    account_value: str | None = Field(default=None, max_length=60)
+    account_name: str | None = Field(default=None, max_length=160)
+    instructions: str | None = None
+    is_active: bool | None = None
+    display_order: int | None = Field(default=None, ge=0, le=99)

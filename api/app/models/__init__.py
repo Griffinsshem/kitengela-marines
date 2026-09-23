@@ -6,7 +6,7 @@ silently never gets a migration.
 """
 
 from app.models.audit import AuditLog
-from app.models.club import Club, Team
+from app.models.club import Club, SocialLink, SupportMethod, Team
 from app.models.competition import Competition, Opponent, Season
 from app.models.enums import (
     ArticleStatus,
@@ -17,7 +17,9 @@ from app.models.enums import (
     PlayerPosition,
     PlayerStatus,
     RoleKey,
+    SocialPlatform,
     StaffRole,
+    SupportMethodKind,
     TeamCategory,
     TeamGender,
     Venue,
@@ -53,6 +55,10 @@ __all__ = [
     "Role",
     "RoleKey",
     "Season",
+    "SocialLink",
+    "SocialPlatform",
+    "SupportMethod",
+    "SupportMethodKind",
     "StaffMember",
     "StaffRole",
     "Team",
