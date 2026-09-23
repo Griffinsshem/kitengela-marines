@@ -16,7 +16,8 @@ from sqlalchemy import select
 from app.api.v1 import api_v1
 from app.api.v1.admin._helpers import not_found, parse_uuid
 from app.extensions import db, limiter
-from app.models.media import MediaAsset
+from app.models.media import Gallery, GalleryItem, MediaAsset
+from app.models.news import Article
 from app.schemas.public import serialize_media_asset_admin
 from app.security.authorization import current_user, require_capability
 from app.security.permissions import Capability
@@ -139,6 +140,23 @@ def delete_media_asset(asset_id: str) -> tuple[Response, int]:
     gains an in-use check so deleting a photo cannot blank a published page.
     """
     asset = _load(asset_id)
+
+    # Deleting a photo a published page depends on would silently blank it.
+    uses: list[str] = []
+    if db.session.query(GalleryItem).filter_by(asset_id=asset.id).first() is not None:
+        uses.append("a gallery")
+    if db.session.query(Gallery).filter_by(cover_asset_id=asset.id).first() is not None:
+        uses.append("a gallery cover")
+    if db.session.query(Article).filter_by(featured_image_id=asset.id).first() is not None:
+        uses.append("an article")
+    if uses:
+        raise ApiError(
+            f"This photo is used by {' and '.join(uses)}. Remove it there first.",
+            status_code=409,
+            code="conflict",
+        )
+
+    set_action("media.deleted")
     set_action("media.deleted")
 
     try:

@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from app.models.club import Team
     from app.models.identity import User
     from app.models.match import Fixture
+    from app.models.media import MediaAsset
 
 
 class ArticleCategory(UUIDPrimaryKey, Timestamped, Base):
@@ -68,11 +69,15 @@ class Article(UUIDPrimaryKey, Timestamped, Base):
     )
     # Credits a writer without an account, or overrides the author's name.
     byline: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    featured_image_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("media_assets.id", ondelete="SET NULL"), nullable=True
+    )
 
     category: Mapped[ArticleCategory] = relationship()
     team: Mapped[Team | None] = relationship()
     fixture: Mapped[Fixture | None] = relationship()
     author: Mapped[User | None] = relationship()
+    featured_image: Mapped[MediaAsset | None] = relationship()
 
     @property
     def display_author(self) -> str:

@@ -6,6 +6,7 @@ these so squad and fixture setup is written once.
 
 from __future__ import annotations
 
+import uuid
 from datetime import UTC, datetime
 from typing import Any
 
@@ -18,6 +19,9 @@ from app.models import (
     Competition,
     Fixture,
     FixtureStatus,
+    Gallery,
+    GalleryItem,
+    MediaAsset,
     Opponent,
     Player,
     PlayerPosition,
@@ -28,6 +32,7 @@ from app.models import (
     TeamCategory,
     TeamGender,
     Venue,
+    Video,
 )
 
 
@@ -161,6 +166,61 @@ def article(
         category_id=category_record.id,
         body_html=kwargs.pop("body_html", "<p>Body text.</p>"),
         status=kwargs.pop("status", ArticleStatus.DRAFT),
+        **kwargs,
+    )
+    db.session.add(record)
+    db.session.flush()
+    return record
+
+
+def media_asset(**kwargs: Any) -> MediaAsset:
+    """A stored-asset record without touching the filesystem."""
+    key = kwargs.pop("storage_key", f"{uuid.uuid4().hex}.jpg")
+    record = MediaAsset(
+        storage_key=key,
+        url=kwargs.pop("url", f"http://localhost:5000/media/{key}"),
+        content_type="image/jpeg",
+        width=kwargs.pop("width", 1200),
+        height=kwargs.pop("height", 800),
+        byte_size=kwargs.pop("byte_size", 120_000),
+        alt_text=kwargs.pop("alt_text", "Squad before kick-off"),
+        **kwargs,
+    )
+    db.session.add(record)
+    db.session.flush()
+    return record
+
+
+def gallery(title: str = "Match day", **kwargs: Any) -> Gallery:
+    record = Gallery(
+        title=title,
+        slug=kwargs.pop("slug", title.lower().replace(" ", "-")),
+        **kwargs,
+    )
+    db.session.add(record)
+    db.session.flush()
+    return record
+
+
+def gallery_item(
+    gallery_record: Gallery, asset: MediaAsset, position: int = 0, **kwargs: Any
+) -> GalleryItem:
+    record = GalleryItem(
+        gallery_id=gallery_record.id,
+        asset_id=asset.id,
+        position=position,
+        **kwargs,
+    )
+    db.session.add(record)
+    db.session.flush()
+    return record
+
+
+def video(title: str = "Match highlights", **kwargs: Any) -> Video:
+    record = Video(
+        title=title,
+        slug=kwargs.pop("slug", title.lower().replace(" ", "-")),
+        youtube_id=kwargs.pop("youtube_id", "dQw4w9WgXcQ"),
         **kwargs,
     )
     db.session.add(record)

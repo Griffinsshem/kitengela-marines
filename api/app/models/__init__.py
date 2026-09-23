@@ -24,7 +24,7 @@ from app.models.enums import (
 )
 from app.models.identity import Role, TeamMembership, User, user_roles
 from app.models.match import Fixture, LeagueStanding, MatchEvent, PlayerMatchStatistic
-from app.models.media import MediaAsset
+from app.models.media import Gallery, GalleryItem, MediaAsset, Video
 from app.models.news import Article, ArticleCategory
 from app.models.people import Player, StaffMember
 
@@ -37,6 +37,8 @@ __all__ = [
     "Competition",
     "Fixture",
     "FixtureStatus",
+    "Gallery",
+    "GalleryItem",
     "LeagueStanding",
     "LineupRole",
     "MatchEvent",
@@ -59,5 +61,6 @@ __all__ = [
     "TeamMembership",
     "User",
     "Venue",
+    "Video",
     "user_roles",
 ]

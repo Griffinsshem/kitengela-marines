@@ -21,6 +21,7 @@ from app.extensions import db
 from app.models.club import Team
 from app.models.enums import ArticleStatus
 from app.models.match import Fixture
+from app.models.media import MediaAsset
 from app.models.news import Article, ArticleCategory
 from app.schemas.admin import ArticleCreate, ArticlePublish, ArticleUpdate
 from app.schemas.public import serialize_article_admin
@@ -55,6 +56,7 @@ def _check_references(values: dict[str, Any]) -> None:
         ("category_id", ArticleCategory, "Unknown category."),
         ("team_id", Team, "Unknown team."),
         ("fixture_id", Fixture, "Unknown fixture."),
+        ("featured_image_id", MediaAsset, "Unknown media asset."),
     )
     for field, model, message in checks:
         value = values.get(field)

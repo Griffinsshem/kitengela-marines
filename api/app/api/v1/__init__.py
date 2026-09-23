@@ -14,6 +14,7 @@ api_v1 = Blueprint("api_v1", __name__, url_prefix="/api/v1")
 # routes on the blueprint above, so the blueprint must exist first.
 from app.api.v1 import auth as _auth  # noqa: E402,F401
 from app.api.v1 import health as _health  # noqa: E402,F401
+from app.api.v1 import media as _media  # noqa: E402,F401
 from app.api.v1 import news as _news  # noqa: E402,F401
 from app.api.v1 import public as _public  # noqa: E402,F401
 from app.api.v1.admin import _admin_routes  # noqa: E402,F401

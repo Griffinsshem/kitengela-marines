@@ -373,6 +373,7 @@ class ArticleCreate(StrictModel):
     team_id: uuid.UUID | None = None
     fixture_id: uuid.UUID | None = None
     byline: str | None = Field(default=None, max_length=160)
+    featured_image_id: uuid.UUID | None = None
 
     # author_id, slug, status and published_at are absent by design. The author
     # comes from the token, the slug from the title, and publication goes
@@ -389,6 +390,7 @@ class ArticleUpdate(StrictModel):
     team_id: uuid.UUID | None = None
     fixture_id: uuid.UUID | None = None
     byline: str | None = Field(default=None, max_length=160)
+    featured_image_id: uuid.UUID | None = None
 
 
 class ArticlePublish(StrictModel):
@@ -396,3 +398,74 @@ class ArticlePublish(StrictModel):
     # on Render — and a report meant for 15:00 in Kenya would go live at 18:00.
     # Omitted means publish now.
     published_at: AwareDatetime | None = None
+
+
+# --- Galleries and video ---------------------------------------------------
+
+
+class GalleryCreate(StrictModel):
+    title: str = Field(min_length=1, max_length=160)
+    description: str | None = None
+    event_date: date | None = None
+    team_id: uuid.UUID | None = None
+    fixture_id: uuid.UUID | None = None
+    cover_asset_id: uuid.UUID | None = None
+    is_published: bool = False
+
+
+class GalleryUpdate(StrictModel):
+    NON_NULLABLE: ClassVar[frozenset[str]] = frozenset({"title", "is_published"})
+
+    title: str | None = Field(default=None, min_length=1, max_length=160)
+    description: str | None = None
+    event_date: date | None = None
+    team_id: uuid.UUID | None = None
+    fixture_id: uuid.UUID | None = None
+    cover_asset_id: uuid.UUID | None = None
+    is_published: bool | None = None
+
+
+class GalleryPhotoInput(StrictModel):
+    asset_id: uuid.UUID
+    caption: str | None = Field(default=None, max_length=500)
+
+
+class GalleryPhotosReplace(StrictModel):
+    """The gallery's photos, in order.
+
+    The whole list is sent every time. Order is the content of a gallery, so
+    reordering, removing and re-captioning are one operation, and there is no
+    moment when a gallery is half-updated.
+    """
+
+    photos: list[GalleryPhotoInput] = Field(max_length=200)
+
+    @model_validator(mode="after")
+    def _no_repeated_photos(self) -> Self:
+        seen = {photo.asset_id for photo in self.photos}
+        if len(seen) != len(self.photos):
+            raise ValueError("Each photo may appear once in a gallery.")
+        return self
+
+
+class VideoCreate(StrictModel):
+    title: str = Field(min_length=1, max_length=160)
+    # A YouTube link in any shape, or a bare id. Only the id is stored.
+    youtube_url: str = Field(min_length=1, max_length=300)
+    description: str | None = None
+    published_on: date | None = None
+    team_id: uuid.UUID | None = None
+    fixture_id: uuid.UUID | None = None
+    is_published: bool = False
+
+
+class VideoUpdate(StrictModel):
+    NON_NULLABLE: ClassVar[frozenset[str]] = frozenset({"title", "youtube_url", "is_published"})
+
+    title: str | None = Field(default=None, min_length=1, max_length=160)
+    youtube_url: str | None = Field(default=None, min_length=1, max_length=300)
+    description: str | None = None
+    published_on: date | None = None
+    team_id: uuid.UUID | None = None
+    fixture_id: uuid.UUID | None = None
+    is_published: bool | None = None

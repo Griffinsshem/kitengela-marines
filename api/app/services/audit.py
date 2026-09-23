@@ -40,6 +40,9 @@ AUDITED: dict[str, str] = {
     "articles": "article",
     "article_categories": "article_category",
     "media_assets": "media_asset",
+    "galleries": "gallery",
+    "gallery_items": "gallery_item",
+    "videos": "video",
 }
 
 # Never recorded, even as a field name that changed.

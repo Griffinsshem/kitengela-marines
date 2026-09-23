@@ -15,7 +15,7 @@ from app.models.club import Club, Team
 from app.models.competition import Opponent, Season
 from app.models.enums import LineupRole, PlayerPosition
 from app.models.match import Fixture, LeagueStanding, MatchEvent, PlayerMatchStatistic
-from app.models.media import MediaAsset
+from app.models.media import Gallery, GalleryItem, MediaAsset, Video
 from app.models.news import Article
 from app.models.people import Player, StaffMember
 from app.utils.sanitize import sanitize_html
@@ -284,6 +284,11 @@ def serialize_article_summary(article: Article) -> dict[str, Any]:
         "category": {"name": article.category.name, "slug": article.category.slug},
         "team": team_ref(article.team) if article.team is not None else None,
         "author": article.display_author,
+        "featured_image": (
+            serialize_media_asset(article.featured_image)
+            if article.featured_image is not None
+            else None
+        ),
     }
 
 
@@ -334,6 +339,74 @@ def serialize_media_asset_admin(asset: MediaAsset) -> dict[str, Any]:
             "content_type": asset.content_type,
             "byte_size": asset.byte_size,
             "created_at": _safe(asset.created_at),
+        }
+    )
+    return data
+
+
+def serialize_gallery_summary(gallery: Gallery) -> dict[str, Any]:
+    cover = gallery.cover_asset or (gallery.items[0].asset if gallery.items else None)
+    return {
+        "slug": gallery.slug,
+        "title": gallery.title,
+        "description": gallery.description,
+        "event_date": _safe(gallery.event_date),
+        "photo_count": len(gallery.items),
+        "cover": serialize_media_asset(cover) if cover is not None else None,
+        "team": team_ref(gallery.team) if gallery.team is not None else None,
+    }
+
+
+def _serialize_gallery_photo(item: GalleryItem) -> dict[str, Any]:
+    photo = serialize_media_asset(item.asset)
+    # A caption set for this gallery wins over the asset's own.
+    photo["caption"] = item.caption or item.asset.caption
+    return photo
+
+
+def serialize_gallery(gallery: Gallery) -> dict[str, Any]:
+    data = serialize_gallery_summary(gallery)
+    data["photos"] = [_serialize_gallery_photo(item) for item in gallery.items]
+    data["fixture"] = {"slug": gallery.fixture.slug} if gallery.fixture is not None else None
+    return data
+
+
+def serialize_gallery_admin(gallery: Gallery) -> dict[str, Any]:
+    data = serialize_gallery(gallery)
+    data.update(
+        {
+            "id": str(gallery.id),
+            "is_published": gallery.is_published,
+            "team_id": str(gallery.team_id) if gallery.team_id else None,
+            "fixture_id": str(gallery.fixture_id) if gallery.fixture_id else None,
+            "cover_asset_id": str(gallery.cover_asset_id) if gallery.cover_asset_id else None,
+        }
+    )
+    return data
+
+
+def serialize_video(video: Video) -> dict[str, Any]:
+    return {
+        "slug": video.slug,
+        "title": video.title,
+        "description": video.description,
+        "published_on": _safe(video.published_on),
+        "youtube_id": video.youtube_id,
+        # Built from the stored id, so both always point at YouTube.
+        "thumbnail_url": video.thumbnail_url,
+        "embed_url": video.embed_url,
+        "team": team_ref(video.team) if video.team is not None else None,
+    }
+
+
+def serialize_video_admin(video: Video) -> dict[str, Any]:
+    data = serialize_video(video)
+    data.update(
+        {
+            "id": str(video.id),
+            "is_published": video.is_published,
+            "team_id": str(video.team_id) if video.team_id else None,
+            "fixture_id": str(video.fixture_id) if video.fixture_id else None,
         }
     )
     return data
