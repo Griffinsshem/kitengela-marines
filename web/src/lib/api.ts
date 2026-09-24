@@ -11,9 +11,20 @@
 import type { z } from "zod";
 
 import {
+  type ArticleSummary,
   type Club,
+  type Fixture,
+  type GallerySummary,
+  type SeasonRef,
+  type Sponsor,
+  type Standing,
   type Team,
+  articlesResponseSchema,
   clubResponseSchema,
+  fixturesResponseSchema,
+  galleriesResponseSchema,
+  sponsorsResponseSchema,
+  standingsResponseSchema,
   teamsResponseSchema,
 } from "@/lib/schemas";
 
@@ -66,3 +77,43 @@ export async function getClub(): Promise<ApiResult<Club | null>> {
   const result = await request("/club", clubResponseSchema, 300);
   return result.ok ? { ok: true, data: result.data.data } : result;
 }
+
+/**
+ * Match data changes on match day and is cached for a minute, so a result
+ * entered at full time reaches supporters while the edge still absorbs the
+ * traffic a result brings.
+ */
+export async function getNextFixture(): Promise<ApiResult<Fixture | null>> {
+  const result = await request("/fixtures?per_page=1", fixturesResponseSchema, 60);
+  return result.ok ? { ok: true, data: result.data.data[0] ?? null } : result;
+}
+
+export async function getLatestResult(): Promise<ApiResult<Fixture | null>> {
+  const result = await request("/results?per_page=1", fixturesResponseSchema, 60);
+  return result.ok ? { ok: true, data: result.data.data[0] ?? null } : result;
+}
+
+export async function getLatestArticles(limit = 3): Promise<ApiResult<ArticleSummary[]>> {
+  const result = await request(`/articles?per_page=${limit}`, articlesResponseSchema, 60);
+  return result.ok ? { ok: true, data: result.data.data } : result;
+}
+
+export async function getStandings(): Promise<
+  ApiResult<{ rows: Standing[]; season: SeasonRef | null }>
+> {
+  const result = await request("/standings", standingsResponseSchema, 60);
+  return result.ok
+    ? { ok: true, data: { rows: result.data.data, season: result.data.meta.season } }
+    : result;
+}
+
+export async function getLatestGalleries(limit = 4): Promise<ApiResult<GallerySummary[]>> {
+  const result = await request(`/galleries?per_page=${limit}`, galleriesResponseSchema, 300);
+  return result.ok ? { ok: true, data: result.data.data } : result;
+}
+
+export async function getSponsors(): Promise<ApiResult<Sponsor[]>> {
+  const result = await request("/sponsors", sponsorsResponseSchema, 600);
+  return result.ok ? { ok: true, data: result.data.data } : result;
+}
+
