@@ -175,3 +175,80 @@ export type SeasonRef = z.infer<typeof seasonRefSchema>;
 export type ArticleSummary = z.infer<typeof articleSummarySchema>;
 export type GallerySummary = z.infer<typeof gallerySummarySchema>;
 export type Sponsor = z.infer<typeof sponsorSchema>;
+
+// --- team detail -----------------------------------------------------------
+
+export const teamDetailSchema = teamSchema.extend({
+  next_fixture: fixtureSchema.nullable(),
+  latest_result: fixtureSchema.nullable(),
+});
+
+export const playerSchema = z.object({
+  id: z.string(),
+  first_name: z.string(),
+  last_name: z.string(),
+  known_as: z.string().nullable(),
+  display_name: z.string(),
+  slug: z.string(),
+  squad_number: z.number().nullable(),
+  position: z.string(),
+  status: z.string(),
+  nationality: z.string().nullable(),
+  biography: z.string().nullable(),
+  photo_url: z.string().nullable(),
+  joined_on: z.string().nullable(),
+  team: teamRefSchema,
+});
+
+export const playerStatisticsSchema = z.object({
+  appearances: z.number(),
+  starts: z.number(),
+  minutes_played: z.number(),
+  goals: z.number(),
+  assists: z.number(),
+  yellow_cards: z.number(),
+  red_cards: z.number(),
+  clean_sheets: z.number().optional(),
+  goals_conceded: z.number().optional(),
+  saves: z.number().optional(),
+});
+
+export const playerDetailSchema = playerSchema.extend({
+  statistics: playerStatisticsSchema,
+  statistics_season: z.string().nullable(),
+});
+
+export const squadSchema = z.object({
+  goalkeepers: z.array(playerSchema),
+  defenders: z.array(playerSchema),
+  midfielders: z.array(playerSchema),
+  forwards: z.array(playerSchema),
+});
+
+export const staffMemberSchema = z.object({
+  id: z.string(),
+  first_name: z.string(),
+  last_name: z.string(),
+  full_name: z.string(),
+  slug: z.string(),
+  role: z.string(),
+  biography: z.string().nullable(),
+  photo_url: z.string().nullable(),
+  display_order: z.number(),
+  team: teamRefSchema.nullable(),
+});
+
+export const teamDetailResponseSchema = z.object({ data: teamDetailSchema });
+export const squadResponseSchema = z.object({
+  data: squadSchema,
+  meta: z.object({ total: z.number() }),
+});
+export const playerDetailResponseSchema = z.object({ data: playerDetailSchema });
+export const staffResponseSchema = z.object({ data: z.array(staffMemberSchema) });
+
+export type TeamDetail = z.infer<typeof teamDetailSchema>;
+export type Player = z.infer<typeof playerSchema>;
+export type PlayerDetail = z.infer<typeof playerDetailSchema>;
+export type PlayerStatistics = z.infer<typeof playerStatisticsSchema>;
+export type Squad = z.infer<typeof squadSchema>;
+export type StaffMember = z.infer<typeof staffMemberSchema>;
