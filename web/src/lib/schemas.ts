@@ -252,3 +252,54 @@ export type PlayerDetail = z.infer<typeof playerDetailSchema>;
 export type PlayerStatistics = z.infer<typeof playerStatisticsSchema>;
 export type Squad = z.infer<typeof squadSchema>;
 export type StaffMember = z.infer<typeof staffMemberSchema>;
+
+// --- match detail ----------------------------------------------------------
+
+export const playerRefSchema = z.object({
+  display_name: z.string(),
+  slug: z.string(),
+  squad_number: z.number().nullable(),
+  position: z.string(),
+});
+
+export const matchEventSchema = z.object({
+  type: z.string(),
+  minute: z.number().nullable(),
+  added_time: z.number().nullable(),
+  is_opposition: z.boolean(),
+  player: playerRefSchema.nullable(),
+  related_player: playerRefSchema.nullable(),
+  note: z.string().nullable(),
+});
+
+export const lineupEntrySchema = z.object({
+  player: playerRefSchema,
+  role: z.string(),
+  minutes_played: z.number(),
+  goals: z.number(),
+  assists: z.number(),
+  yellow_cards: z.number(),
+  red_cards: z.number(),
+  clean_sheet: z.boolean().nullable().optional(),
+  goals_conceded: z.number().nullable().optional(),
+  saves: z.number().nullable().optional(),
+});
+
+export const matchDetailSchema = fixtureSchema.extend({
+  report: z.string().nullable(),
+  player_of_the_match: playerRefSchema.nullable(),
+  events: z.array(matchEventSchema),
+  lineup: z.object({
+    starters: z.array(lineupEntrySchema),
+    substitutes: z.array(lineupEntrySchema),
+    unused_substitutes: z.array(lineupEntrySchema),
+  }),
+});
+
+export const matchDetailResponseSchema = z.object({ data: matchDetailSchema });
+
+export type PlayerRef = z.infer<typeof playerRefSchema>;
+export type MatchEvent = z.infer<typeof matchEventSchema>;
+export type LineupEntry = z.infer<typeof lineupEntrySchema>;
+export type MatchDetail = z.infer<typeof matchDetailSchema>;
+export type PaginationMeta = z.infer<typeof paginationMetaSchema>;

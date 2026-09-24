@@ -18,6 +18,8 @@ import {
   type SeasonRef,
   type Sponsor,
   type Standing,
+  type MatchDetail,
+  type PaginationMeta,
   type PlayerDetail,
   type Squad,
   type StaffMember,
@@ -28,6 +30,7 @@ import {
   fixturesResponseSchema,
   galleriesResponseSchema,
   sponsorsResponseSchema,
+  matchDetailResponseSchema,
   playerDetailResponseSchema,
   squadResponseSchema,
   staffResponseSchema,
@@ -175,6 +178,39 @@ export async function getTeamArticles(
     articlesResponseSchema,
     60,
   );
+  return result.ok ? { ok: true, data: result.data.data } : result;
+}
+
+export type Paginated<T> = { items: T[]; meta: PaginationMeta };
+
+/**
+ * Upcoming fixtures and completed results are two views of one table, so they
+ * share a shape here too. `team` filters by slug; an unknown slug returns an
+ * empty page rather than an error.
+ */
+async function matchList(
+  path: "fixtures" | "results",
+  { team, page = 1, perPage = 20 }: { team?: string; page?: number; perPage?: number },
+): Promise<ApiResult<Paginated<Fixture>>> {
+  const query = new URLSearchParams({ page: String(page), per_page: String(perPage) });
+  if (team) query.set("team", team);
+
+  const result = await request(`/${path}?${query.toString()}`, fixturesResponseSchema, 60);
+  return result.ok
+    ? { ok: true, data: { items: result.data.data, meta: result.data.meta } }
+    : result;
+}
+
+export function getFixtures(options: { team?: string; page?: number } = {}) {
+  return matchList("fixtures", options);
+}
+
+export function getResults(options: { team?: string; page?: number } = {}) {
+  return matchList("results", options);
+}
+
+export async function getMatch(slug: string): Promise<ApiResult<MatchDetail>> {
+  const result = await request(`/matches/${slug}`, matchDetailResponseSchema, 60);
   return result.ok ? { ok: true, data: result.data.data } : result;
 }
 
