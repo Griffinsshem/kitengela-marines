@@ -303,3 +303,21 @@ export type MatchEvent = z.infer<typeof matchEventSchema>;
 export type LineupEntry = z.infer<typeof lineupEntrySchema>;
 export type MatchDetail = z.infer<typeof matchDetailSchema>;
 export type PaginationMeta = z.infer<typeof paginationMetaSchema>;
+
+// --- article detail --------------------------------------------------------
+
+export const articleDetailSchema = articleSummarySchema.extend({
+  // Sanitised by the API on save and again on read.
+  body_html: z.string(),
+  fixture: z.object({ slug: z.string() }).nullable(),
+});
+
+export const articleCategorySchema = z.object({ name: z.string(), slug: z.string() });
+
+export const articleDetailResponseSchema = z.object({ data: articleDetailSchema });
+export const articleCategoriesResponseSchema = z.object({
+  data: z.array(articleCategorySchema),
+});
+
+export type ArticleDetail = z.infer<typeof articleDetailSchema>;
+export type ArticleCategory = z.infer<typeof articleCategorySchema>;

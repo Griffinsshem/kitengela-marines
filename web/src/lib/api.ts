@@ -11,6 +11,8 @@
 import type { z } from "zod";
 
 import {
+  type ArticleCategory,
+  type ArticleDetail,
   type ArticleSummary,
   type Club,
   type Fixture,
@@ -25,6 +27,8 @@ import {
   type StaffMember,
   type Team,
   type TeamDetail,
+  articleCategoriesResponseSchema,
+  articleDetailResponseSchema,
   articlesResponseSchema,
   clubResponseSchema,
   fixturesResponseSchema,
@@ -211,6 +215,34 @@ export function getResults(options: { team?: string; page?: number } = {}) {
 
 export async function getMatch(slug: string): Promise<ApiResult<MatchDetail>> {
   const result = await request(`/matches/${slug}`, matchDetailResponseSchema, 60);
+  return result.ok ? { ok: true, data: result.data.data } : result;
+}
+
+export async function getArticles({
+  category,
+  team,
+  page = 1,
+  perPage = 9,
+}: { category?: string; team?: string; page?: number; perPage?: number } = {}): Promise<
+  ApiResult<Paginated<ArticleSummary>>
+> {
+  const query = new URLSearchParams({ page: String(page), per_page: String(perPage) });
+  if (category) query.set("category", category);
+  if (team) query.set("team", team);
+
+  const result = await request(`/articles?${query.toString()}`, articlesResponseSchema, 60);
+  return result.ok
+    ? { ok: true, data: { items: result.data.data, meta: result.data.meta } }
+    : result;
+}
+
+export async function getArticle(slug: string): Promise<ApiResult<ArticleDetail>> {
+  const result = await request(`/articles/${slug}`, articleDetailResponseSchema, 60);
+  return result.ok ? { ok: true, data: result.data.data } : result;
+}
+
+export async function getArticleCategories(): Promise<ApiResult<ArticleCategory[]>> {
+  const result = await request("/article-categories", articleCategoriesResponseSchema, 600);
   return result.ok ? { ok: true, data: result.data.data } : result;
 }
 
