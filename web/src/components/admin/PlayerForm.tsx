@@ -3,8 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import Image from "next/image";
+
 import { useAuth } from "@/components/admin/AuthProvider";
 import { CONTROL_CLASSES, Field } from "@/components/admin/Field";
+import { MediaPicker } from "@/components/admin/MediaPicker";
 
 /**
  * Adding and editing a player.
@@ -292,20 +295,38 @@ export function PlayerForm({ initial }: { initial?: PlayerDraft }) {
           />
         </Field>
 
-        <Field
-          label="Photograph URL"
-          htmlFor="photo_url"
-          hint="Temporary: uploading photographs from the media library arrives in the next step."
-        >
-          <input
-            id="photo_url"
-            type="url"
-            maxLength={500}
-            value={draft.photo_url}
-            onChange={(event) => set("photo_url", event.target.value)}
-            className={CONTROL_CLASSES}
-          />
-        </Field>
+        <div className="border border-line bg-chalk p-4">
+          <p className="text-meta font-semibold">Photograph</p>
+          <p className="mt-1 text-meta text-muted">
+            Chosen from the media library. Players without one show their squad number instead.
+          </p>
+
+          {draft.photo_url ? (
+            <div className="mt-4 flex flex-wrap items-start gap-4">
+              <Image
+                src={draft.photo_url}
+                alt=""
+                width={120}
+                height={160}
+                className="h-40 w-auto object-cover object-top"
+              />
+              <button
+                type="button"
+                onClick={() => set("photo_url", "")}
+                className="text-meta font-semibold underline underline-offset-4"
+              >
+                Remove
+              </button>
+            </div>
+          ) : null}
+
+          <div className="mt-4">
+            <MediaPicker
+              label={draft.photo_url ? "Choose a different photograph" : "Choose a photograph"}
+              onSelect={(asset) => set("photo_url", asset.url)}
+            />
+          </div>
+        </div>
       </section>
 
       <section className="border-t-4 border-accent-ink pt-6">

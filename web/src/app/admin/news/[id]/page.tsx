@@ -19,6 +19,8 @@ type ArticlePayload = {
   byline: string | null;
   category_id?: string;
   team_id?: string | null;
+  featured_image_id?: string | null;
+  featured_image?: { url: string; alt: string } | null;
 };
 
 export default function EditArticlePage() {
@@ -61,6 +63,9 @@ export default function EditArticlePage() {
           team_id: article.team_id ?? "",
           byline: article.byline ?? "",
           status: article.status,
+          featured_image_id: article.featured_image_id ?? "",
+          featured_image_url: article.featured_image?.url ?? "",
+          featured_image_alt: article.featured_image?.alt ?? "",
         },
       });
     }

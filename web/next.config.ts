@@ -5,7 +5,11 @@ import type { NextConfig } from "next";
  * widened only where a real feature needs it: YouTube/Vimeo for highlights,
  * the API origin for data fetches, Cloudinary for club photography.
  */
-const apiOrigin = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+// The API the site is configured to talk to. Images it serves must be
+// loadable, so the image optimiser and the content policy both derive
+// their rule from this one value rather than from NODE_ENV.
+const apiUrl = new URL(process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000");
+const apiOrigin = apiUrl.origin;
 
 const contentSecurityPolicy = [
   "default-src 'self'",
@@ -14,9 +18,7 @@ const contentSecurityPolicy = [
   // never used in production, so the production policy never allows it.
   `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' blob: data: https://res.cloudinary.com https://i.ytimg.com${
-    process.env.NODE_ENV === "development" ? " http://localhost:5000" : ""
-  }`,
+  `img-src 'self' blob: data: https://res.cloudinary.com https://i.ytimg.com ${apiOrigin}`,
   "font-src 'self' data:",
   `connect-src 'self' ${apiOrigin}`,
   // Match highlights are embedded, never self-hosted.
@@ -36,11 +38,18 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "res.cloudinary.com" },
       { protocol: "https", hostname: "i.ytimg.com" },
-      // Development only: images served by the local Flask API.
-      ...(process.env.NODE_ENV === "development"
-        ? ([{ protocol: "http", hostname: "localhost", port: "5000" }] as const)
-        : []),
+      {
+        protocol: apiUrl.protocol.replace(":", "") as "http" | "https",
+        hostname: apiUrl.hostname,
+        ...(apiUrl.port ? { port: apiUrl.port } : {}),
+      },
     ],
+    // Next refuses to fetch images from private addresses, because an
+    // optimiser that will fetch any URL can be used to probe a server's
+    // internal network. In development our own API is on 127.0.0.1, so the
+    // refusal is a false positive; in production the API is a public host
+    // and this stays off, which the condition guarantees rather than trusts.
+    dangerouslyAllowLocalIP: apiUrl.hostname === "localhost",
     formats: ["image/avif", "image/webp"],
     // Tuned to the breakpoints the layout actually uses, not Next.js defaults.
     deviceSizes: [360, 414, 640, 768, 1024, 1280, 1536, 1920],

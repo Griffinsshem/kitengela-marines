@@ -6,7 +6,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/components/admin/AuthProvider";
 import { CONTROL_CLASSES, Field } from "@/components/admin/Field";
 import { MarkdownEditor } from "@/components/admin/MarkdownEditor";
+import { MediaPicker } from "@/components/admin/MediaPicker";
 import { markdownToHtml } from "@/lib/markdown";
+import Image from "next/image";
 
 /**
  * Writing and publishing an article.
@@ -31,6 +33,9 @@ export type ArticleDraft = {
   team_id: string;
   byline: string;
   status?: string;
+  featured_image_id: string;
+  featured_image_url: string;
+  featured_image_alt: string;
 };
 
 const BLANK: ArticleDraft = {
@@ -40,6 +45,9 @@ const BLANK: ArticleDraft = {
   category_id: "",
   team_id: "",
   byline: "",
+  featured_image_id: "",
+  featured_image_url: "",
+  featured_image_alt: "",
 };
 
 export function ArticleForm({ initial }: { initial?: ArticleDraft }) {
@@ -102,6 +110,7 @@ export function ArticleForm({ initial }: { initial?: ArticleDraft }) {
       category_id: draft.category_id,
       team_id: draft.team_id || null,
       byline: draft.byline || null,
+      featured_image_id: draft.featured_image_id || null,
     };
 
     const response = draft.id
@@ -267,6 +276,56 @@ export function ArticleForm({ initial }: { initial?: ArticleDraft }) {
             className={CONTROL_CLASSES}
           />
         </Field>
+      </div>
+
+      <div className="border border-line bg-chalk p-4">
+        <p className="text-meta font-semibold">Featured image</p>
+        <p className="mt-1 text-meta text-muted">
+          Shown at the top of the story and when it is shared. Its description travels with it.
+        </p>
+
+        {draft.featured_image_url ? (
+          <div className="mt-4 flex flex-wrap items-start gap-4">
+            <Image
+              src={draft.featured_image_url}
+              alt={draft.featured_image_alt}
+              width={200}
+              height={150}
+              className="h-28 w-auto object-cover"
+            />
+            <div>
+              <p className="text-meta">{draft.featured_image_alt}</p>
+              <button
+                type="button"
+                onClick={() =>
+                  setDraft({
+                    ...draft,
+                    featured_image_id: "",
+                    featured_image_url: "",
+                    featured_image_alt: "",
+                  })
+                }
+                className="mt-2 text-meta font-semibold underline underline-offset-4"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        <div className="mt-4">
+          <MediaPicker
+            label={draft.featured_image_url ? "Choose a different image" : "Choose an image"}
+            onSelect={(asset) =>
+              setDraft((current) => ({
+                ...current,
+                featured_image_id: asset.id,
+                featured_image_url: asset.url,
+                featured_image_alt: asset.alt,
+              }))
+            }
+          />
+        </div>
       </div>
 
       <MarkdownEditor
