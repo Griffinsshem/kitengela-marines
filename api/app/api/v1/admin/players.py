@@ -74,6 +74,19 @@ def list_squad_admin(team_id: str) -> tuple[Response, int]:
     return jsonify({"data": [serialize_player_admin(p) for p in players]}), 200
 
 
+@api_v1.get("/admin/players/<player_id>")
+@require_capability(Capability.VIEW_PRIVATE_PLAYER_DATA)
+def get_player_admin(player_id: str) -> tuple[Response, int]:
+    """One player, including club-internal fields.
+
+    Scope is checked against the team the player already belongs to, so a
+    Starlets coach cannot read a men's squad member's private details.
+    """
+    player = _load_player(player_id)
+    require_team_scope(current_user(), Capability.VIEW_PRIVATE_PLAYER_DATA, player.team_id)
+    return jsonify({"data": serialize_player_admin(player)}), 200
+
+
 @api_v1.post("/admin/players")
 @require_capability(Capability.MANAGE_SQUAD)
 def create_player() -> tuple[Response, int]:

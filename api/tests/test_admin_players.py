@@ -458,3 +458,29 @@ def test_nullable_field_can_be_cleared(
     assert response.status_code == 200
     db.session.refresh(player)
     assert player.biography is None
+
+
+@pytest.mark.rbac
+def test_single_player_endpoint_is_scoped_and_does_not_shadow_me(
+    session: object, client: FlaskClient, roles: dict[RoleKey, Role]
+) -> None:
+    starlets = factories.team("starlets", gender=TeamGender.WOMEN)
+    men = factories.team("marines-men")
+    coach = make_user("coach@example.com", RoleKey.COACH)
+    attach(coach, starlets, MembershipCapacity.COACH)
+    own = factories.player(starlets, "Own", "Player", phone="+254700000000")
+    other = factories.player(men, "Other", "Player")
+    db.session.commit()
+
+    headers = auth(client, "coach@example.com")
+
+    allowed = client.get(f"/api/v1/admin/players/{own.id}", headers=headers)
+    assert allowed.status_code == 200
+    assert allowed.get_json()["data"]["phone"] == "+254700000000"
+
+    refused = client.get(f"/api/v1/admin/players/{other.id}", headers=headers)
+    assert refused.status_code == 403
+
+    # The static /me rule still wins over the dynamic one.
+    mine = client.get("/api/v1/admin/players/me", headers=headers)
+    assert mine.status_code == 404
