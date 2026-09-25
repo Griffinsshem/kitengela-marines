@@ -495,3 +495,18 @@ def serialize_submission(submission: Submission) -> dict[str, Any]:
         "handled_at": _safe(submission.handled_at),
         "created_at": _safe(submission.created_at),
     }
+
+
+def serialize_fixture_admin(fixture: Fixture) -> dict[str, Any]:
+    """The public payload plus the ids an editor needs to act on it."""
+    data = serialize_fixture(fixture)
+    data.update(
+        {
+            "id": str(fixture.id),
+            "team_id": str(fixture.team_id),
+            "opponent_id": str(fixture.opponent_id),
+            "season_id": str(fixture.season_id),
+            "report": fixture.report,
+        }
+    )
+    return data

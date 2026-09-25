@@ -494,3 +494,34 @@ def test_media_officer_cannot_touch_standings(
     )
 
     assert response.status_code == 403
+
+
+@pytest.mark.rbac
+def test_admin_fixture_list_carries_ids_and_is_scoped(
+    session: object, client: FlaskClient, roles: dict[RoleKey, Role]
+) -> None:
+    starlets = factories.team("starlets", gender=TeamGender.WOMEN)
+    men = factories.team("marines-men")
+    current = factories.season()
+    theirs = factories.fixture(starlets, current)
+    # Its own opponent: opponent names are unique, and the factory's default
+    # would collide with the one created for the fixture above.
+    ours = factories.fixture(
+        men,
+        current,
+        slug="mens-match",
+        opponent=factories.opponent(name="Neighbours FC"),
+    )
+    manager = make_user("manager@example.com", RoleKey.TEAM_MANAGER)
+    attach(manager, starlets, MembershipCapacity.MANAGER)
+    db.session.commit()
+
+    headers = auth(client, "manager@example.com")
+
+    listed = client.get("/api/v1/admin/fixtures", headers=headers)
+    assert listed.status_code == 200
+    assert "id" in listed.get_json()["data"][0]
+
+    assert client.get(f"/api/v1/admin/fixtures/{theirs.id}", headers=headers).status_code == 200
+    # Another team's match is refused even though the role allows fixtures.
+    assert client.get(f"/api/v1/admin/fixtures/{ours.id}", headers=headers).status_code == 403

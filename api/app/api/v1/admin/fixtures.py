@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from flask import Response, jsonify
+from flask import Response, jsonify, request
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.api.v1 import api_v1
 from app.api.v1.admin._helpers import (
@@ -27,12 +28,18 @@ from app.schemas.admin import (
     SeasonCreate,
     StandingsReplace,
 )
-from app.schemas.public import serialize_fixture, serialize_match_detail, serialize_standing
+from app.schemas.public import (
+    serialize_fixture,
+    serialize_fixture_admin,
+    serialize_match_detail,
+    serialize_standing,
+)
 from app.security.authorization import current_user, require_capability, require_team_scope
 from app.security.permissions import Capability
 from app.services.audit import set_action
 from app.services.results import record_result
 from app.utils.errors import ApiError
+from app.utils.pagination import paginate
 from app.utils.slugs import unique_slug
 
 
@@ -294,3 +301,62 @@ def replace_standings() -> tuple[Response, int]:
     ).all()
 
     return jsonify({"data": [serialize_standing(s) for s in standings]}), 200
+
+
+@api_v1.get("/admin/fixtures")
+@require_capability(Capability.MANAGE_FIXTURES)
+def list_fixtures_admin() -> tuple[Response, int]:
+    """Every fixture in one list, newest first.
+
+    Unlike the public endpoints this does not split fixtures from results: an
+    editor is looking for one particular match, and remembering whether it has
+    been played yet is not their job.
+    """
+    stmt = (
+        select(Fixture)
+        .options(
+            selectinload(Fixture.team),
+            selectinload(Fixture.opponent),
+            selectinload(Fixture.season).selectinload(Season.competition),
+        )
+        .order_by(Fixture.kickoff_at.desc().nullslast(), Fixture.scheduled_on.desc().nullslast())
+    )
+
+    team = request.args.get("team")
+    if team:
+        stmt = stmt.join(Team, Team.id == Fixture.team_id).where(Team.slug == team)
+
+    return jsonify(paginate(stmt, serialize_fixture_admin)), 200
+
+
+@api_v1.get("/admin/fixtures/<fixture_id>")
+@require_capability(Capability.MANAGE_FIXTURES)
+def get_fixture_admin(fixture_id: str) -> tuple[Response, int]:
+    fixture = _load_fixture(fixture_id)
+    require_team_scope(current_user(), Capability.MANAGE_FIXTURES, fixture.team_id)
+    return jsonify({"data": serialize_fixture_admin(fixture)}), 200
+
+
+@api_v1.get("/admin/seasons")
+@require_capability(Capability.MANAGE_FIXTURES)
+def list_seasons_admin() -> tuple[Response, int]:
+    """Seasons with their ids, for the fixture form's competition picker."""
+    seasons = db.session.scalars(
+        select(Season)
+        .options(selectinload(Season.competition))
+        .order_by(Season.is_current.desc(), Season.label.desc())
+    ).all()
+
+    return jsonify(
+        {
+            "data": [
+                {
+                    "id": str(season.id),
+                    "label": season.label,
+                    "competition": season.competition.name,
+                    "is_current": season.is_current,
+                }
+                for season in seasons
+            ]
+        }
+    ), 200
