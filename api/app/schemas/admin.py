@@ -382,6 +382,7 @@ class ArticleCreate(StrictModel):
     title: str = Field(min_length=1, max_length=200)
     summary: str | None = Field(default=None, max_length=300)
     body_html: str = Field(default="", max_length=MAX_BODY_CHARS)
+    body_markdown: str | None = Field(default=None, max_length=MAX_BODY_CHARS)
     category_id: uuid.UUID
     team_id: uuid.UUID | None = None
     fixture_id: uuid.UUID | None = None
@@ -399,6 +400,7 @@ class ArticleUpdate(StrictModel):
     title: str | None = Field(default=None, min_length=1, max_length=200)
     summary: str | None = Field(default=None, max_length=300)
     body_html: str | None = Field(default=None, max_length=MAX_BODY_CHARS)
+    body_markdown: str | None = Field(default=None, max_length=MAX_BODY_CHARS)
     category_id: uuid.UUID | None = None
     team_id: uuid.UUID | None = None
     fixture_id: uuid.UUID | None = None

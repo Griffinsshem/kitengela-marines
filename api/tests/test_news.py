@@ -302,3 +302,50 @@ def test_stored_html_is_sanitised_again_on_read(session: object, client: FlaskCl
     body = client.get("/api/v1/articles/legacy").get_json()["data"]["body_html"]
 
     assert body == "<p>ok</p>"
+
+
+def test_markdown_source_is_kept_for_the_author_but_not_published(
+    session: object, client: FlaskClient, media: dict[str, str]
+) -> None:
+    category = factories.article_category()
+    db.session.commit()
+
+    created = client.post(
+        "/api/v1/admin/articles",
+        json=draft_body(
+            category,
+            body_html="<p>Training resumes.</p>",
+            body_markdown="Training resumes.",
+        ),
+        headers=media,
+    )
+
+    assert created.status_code == 201
+    # The editor gets the author's own text back.
+    assert created.get_json()["data"]["body_markdown"] == "Training resumes."
+
+    article_id = created.get_json()["data"]["id"]
+    client.post(f"/api/v1/admin/articles/{article_id}/publish", json={}, headers=media)
+    public = client.get("/api/v1/articles/pre-season-update").get_json()["data"]
+
+    # Readers get the rendered article, not the source.
+    assert "body_markdown" not in public
+    assert public["body_html"] == "<p>Training resumes.</p>"
+
+
+@pytest.mark.rbac
+def test_admin_category_list_carries_ids_and_needs_news_capability(
+    session: object, client: FlaskClient, media: dict[str, str], roles: dict[RoleKey, Role]
+) -> None:
+    factories.article_category(name="Match Report")
+    db.session.commit()
+
+    allowed = client.get("/api/v1/admin/article-categories", headers=media)
+    assert allowed.status_code == 200
+    assert "id" in allowed.get_json()["data"][0]
+
+    make_user("manager@example.com", RoleKey.TEAM_MANAGER)
+    refused = client.get(
+        "/api/v1/admin/article-categories", headers=auth(client, "manager@example.com")
+    )
+    assert refused.status_code == 403

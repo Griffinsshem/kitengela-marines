@@ -190,3 +190,18 @@ def delete_article(article_id: str) -> tuple[Response, int]:
     db.session.commit()
 
     return jsonify({"data": {"deleted": True}}), 200
+
+
+@api_v1.get("/admin/article-categories")
+@require_capability(Capability.MANAGE_NEWS)
+def list_article_categories_admin() -> tuple[Response, int]:
+    """Categories with their ids, which the public list omits."""
+    categories = db.session.scalars(select(ArticleCategory).order_by(ArticleCategory.name)).all()
+    return jsonify(
+        {
+            "data": [
+                {"id": str(category.id), "name": category.name, "slug": category.slug}
+                for category in categories
+            ]
+        }
+    ), 200

@@ -314,6 +314,7 @@ def serialize_article_admin(article: Article) -> dict[str, Any]:
             "fixture_id": str(article.fixture_id) if article.fixture_id else None,
             "created_at": _safe(article.created_at),
             "updated_at": _safe(article.updated_at),
+            "body_markdown": article.body_markdown,
         }
     )
     return data

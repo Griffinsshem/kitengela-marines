@@ -47,6 +47,10 @@ class Article(UUIDPrimaryKey, Timestamped, Base):
     slug: Mapped[str] = mapped_column(String(220), nullable=False, unique=True, index=True)
     summary: Mapped[str | None] = mapped_column(String(300), nullable=True)
     body_html: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    # What the author actually typed. body_html is derived from it, so
+    # reopening an article shows the writer their own words rather than markup.
+    # Admin-only: no public endpoint returns this.
+    body_markdown: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     status: Mapped[ArticleStatus] = mapped_column(
         enum_column(ArticleStatus, "ck_articles_status"),
