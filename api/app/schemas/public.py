@@ -387,6 +387,11 @@ def serialize_gallery_admin(gallery: Gallery) -> dict[str, Any]:
             "cover_asset_id": str(gallery.cover_asset_id) if gallery.cover_asset_id else None,
         }
     )
+    # The editor resends the whole list, so each photo needs its asset id. The
+    # public payload deliberately carries only what a page renders.
+    data["photos"] = [
+        {**_serialize_gallery_photo(item), "asset_id": str(item.asset_id)} for item in gallery.items
+    ]
     return data
 
 

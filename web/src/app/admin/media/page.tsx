@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/admin/AuthProvider";
+import { MediaTabs } from "@/components/admin/MediaTabs";
 import { MediaUpload } from "@/components/admin/MediaUpload";
 import { type MediaAsset, fileSize } from "@/components/admin/media";
 import { formatDate } from "@/lib/datetime";
@@ -93,6 +94,10 @@ export default function AdminMediaPage() {
         Photographs are resized when they are uploaded, and the location data phones record is
         removed before anything is stored.
       </p>
+
+      <div className="mt-6">
+        <MediaTabs />
+      </div>
 
       <div className="mt-8">
         <MediaUpload onUploaded={(asset) => setAssets((current) => [asset, ...(current ?? [])])} />

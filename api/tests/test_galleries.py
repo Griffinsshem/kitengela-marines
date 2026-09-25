@@ -19,6 +19,7 @@ from app.models import (
     User,
     Video,
 )
+from app.schemas.public import serialize_gallery
 from app.utils.video import parse_youtube_id
 from tests import factories
 
@@ -307,3 +308,20 @@ def test_a_featured_image_reaches_the_public_article(session: object, client: Fl
 
     assert data["featured_image"]["alt"] == "Captain lifts the trophy"
     assert db.session.query(Article).count() == 1
+
+
+def test_admin_gallery_carries_asset_ids_for_the_editor(
+    session: object, client: FlaskClient, media: dict[str, str]
+) -> None:
+    gallery = factories.gallery()
+    asset = factories.media_asset(alt_text="Squad before kick-off")
+    factories.gallery_item(gallery, asset)
+    db.session.commit()
+
+    response = client.get(f"/api/v1/admin/galleries/{gallery.id}", headers=media)
+
+    assert response.status_code == 200
+    photo = response.get_json()["data"]["photos"][0]
+    assert photo["asset_id"] == str(asset.id)
+    # The public payload stays as it was: what a page renders, nothing more.
+    assert "asset_id" not in serialize_gallery(gallery)["photos"][0]

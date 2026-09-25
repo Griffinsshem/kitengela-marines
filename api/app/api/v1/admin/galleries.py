@@ -66,6 +66,17 @@ def list_galleries_admin() -> tuple[Response, int]:
     return jsonify(paginate(stmt, serialize_gallery_admin)), 200
 
 
+@api_v1.get("/admin/galleries/<gallery_id>")
+@require_capability(Capability.MANAGE_MEDIA)
+def get_gallery_admin(gallery_id: str) -> tuple[Response, int]:
+    gallery = db.session.scalars(
+        select(Gallery).where(Gallery.id == parse_uuid(gallery_id, "gallery id")).options(*LOADERS)
+    ).first()
+    if gallery is None:
+        not_found("Gallery not found.")
+    return jsonify({"data": serialize_gallery_admin(gallery)}), 200
+
+
 @api_v1.post("/admin/galleries")
 @require_capability(Capability.MANAGE_MEDIA)
 def create_gallery() -> tuple[Response, int]:
