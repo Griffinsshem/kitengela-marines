@@ -49,6 +49,13 @@ def serialize_club(club: Club) -> dict[str, Any]:
         "contact_phone": club.contact_phone,
         "summary": club.summary,
         "mission": club.mission,
+        "values": [line.strip() for line in (club.values_text or "").splitlines() if line.strip()],
+        "training_times": [
+            line.strip() for line in (club.training_times or "").splitlines() if line.strip()
+        ],
+        # Raw text as well, so the admin form can edit what was typed.
+        "values_text": club.values_text,
+        "training_times_text": club.training_times,
     }
 
 

@@ -78,6 +78,7 @@ class StaffRole(StrEnum):
     GOALKEEPING_COACH = "goalkeeping_coach"
     TEAM_MANAGER = "team_manager"
     PHYSIO = "physio"
+    TREASURER = "treasurer"
     OFFICIAL = "official"
 
 

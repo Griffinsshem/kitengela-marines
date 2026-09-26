@@ -47,6 +47,11 @@ class Club(UUIDPrimaryKey, Timestamped, Base):
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     mission: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # One per line. A club's values list is half a dozen words each, so a
+    # table would be more machinery than the content deserves.
+    values_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    training_times: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     teams: Mapped[list[Team]] = relationship(
         back_populates="club",
         cascade="all, delete-orphan",

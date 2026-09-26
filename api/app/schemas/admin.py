@@ -508,6 +508,8 @@ class ClubUpsert(StrictModel):
     contact_phone: str | None = Field(default=None, max_length=32, pattern=r"^[0-9+()\s-]*$")
     summary: str | None = None
     mission: str | None = None
+    values_text: str | None = None
+    training_times: str | None = None
 
 
 class SocialLinkCreate(StrictModel):
