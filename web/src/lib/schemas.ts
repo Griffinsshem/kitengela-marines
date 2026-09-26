@@ -321,3 +321,30 @@ export const articleCategoriesResponseSchema = z.object({
 
 export type ArticleDetail = z.infer<typeof articleDetailSchema>;
 export type ArticleCategory = z.infer<typeof articleCategorySchema>;
+
+// --- galleries and video ---------------------------------------------------
+
+export const galleryDetailSchema = gallerySummarySchema.extend({
+  photos: z.array(mediaAssetSchema),
+  fixture: z.object({ slug: z.string() }).nullable(),
+});
+
+export const videoSchema = z.object({
+  slug: z.string(),
+  title: z.string(),
+  description: z.string().nullable(),
+  published_on: z.string().nullable(),
+  youtube_id: z.string(),
+  thumbnail_url: z.string(),
+  embed_url: z.string(),
+  team: teamRefSchema.nullable(),
+});
+
+export const galleryDetailResponseSchema = z.object({ data: galleryDetailSchema });
+export const videosResponseSchema = z.object({
+  data: z.array(videoSchema),
+  meta: paginationMetaSchema,
+});
+
+export type GalleryDetail = z.infer<typeof galleryDetailSchema>;
+export type Video = z.infer<typeof videoSchema>;

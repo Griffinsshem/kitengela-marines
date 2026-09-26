@@ -16,9 +16,11 @@ import {
   type ArticleSummary,
   type Club,
   type Fixture,
+  type GalleryDetail,
   type GallerySummary,
   type SeasonRef,
   type Sponsor,
+  type Video,
   type Standing,
   type MatchDetail,
   type PaginationMeta,
@@ -33,6 +35,7 @@ import {
   clubResponseSchema,
   fixturesResponseSchema,
   galleriesResponseSchema,
+  galleryDetailResponseSchema,
   sponsorsResponseSchema,
   matchDetailResponseSchema,
   playerDetailResponseSchema,
@@ -41,6 +44,7 @@ import {
   standingsResponseSchema,
   teamDetailResponseSchema,
   teamsResponseSchema,
+  videosResponseSchema,
 } from "@/lib/schemas";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000").replace(/\/$/, "");
@@ -244,5 +248,40 @@ export async function getArticle(slug: string): Promise<ApiResult<ArticleDetail>
 export async function getArticleCategories(): Promise<ApiResult<ArticleCategory[]>> {
   const result = await request("/article-categories", articleCategoriesResponseSchema, 600);
   return result.ok ? { ok: true, data: result.data.data } : result;
+}
+
+export async function getGalleries({
+  team,
+  page = 1,
+  perPage = 12,
+}: { team?: string; page?: number; perPage?: number } = {}): Promise<
+  ApiResult<Paginated<GallerySummary>>
+> {
+  const query = new URLSearchParams({ page: String(page), per_page: String(perPage) });
+  if (team) query.set("team", team);
+
+  const result = await request(`/galleries?${query.toString()}`, galleriesResponseSchema, 300);
+  return result.ok
+    ? { ok: true, data: { items: result.data.data, meta: result.data.meta } }
+    : result;
+}
+
+export async function getGallery(slug: string): Promise<ApiResult<GalleryDetail>> {
+  const result = await request(`/galleries/${slug}`, galleryDetailResponseSchema, 300);
+  return result.ok ? { ok: true, data: result.data.data } : result;
+}
+
+export async function getVideos({
+  team,
+  page = 1,
+  perPage = 12,
+}: { team?: string; page?: number; perPage?: number } = {}): Promise<ApiResult<Paginated<Video>>> {
+  const query = new URLSearchParams({ page: String(page), per_page: String(perPage) });
+  if (team) query.set("team", team);
+
+  const result = await request(`/videos?${query.toString()}`, videosResponseSchema, 300);
+  return result.ok
+    ? { ok: true, data: { items: result.data.data, meta: result.data.meta } }
+    : result;
 }
 
