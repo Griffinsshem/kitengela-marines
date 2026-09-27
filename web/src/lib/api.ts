@@ -19,7 +19,9 @@ import {
   type GalleryDetail,
   type GallerySummary,
   type SeasonRef,
+  type SocialLink,
   type Sponsor,
+  type SupportMethod,
   type Video,
   type Standing,
   type MatchDetail,
@@ -36,7 +38,9 @@ import {
   fixturesResponseSchema,
   galleriesResponseSchema,
   galleryDetailResponseSchema,
+  socialLinksResponseSchema,
   sponsorsResponseSchema,
+  supportMethodsResponseSchema,
   matchDetailResponseSchema,
   playerDetailResponseSchema,
   squadResponseSchema,
@@ -283,5 +287,17 @@ export async function getVideos({
   return result.ok
     ? { ok: true, data: { items: result.data.data, meta: result.data.meta } }
     : result;
+}
+
+export async function getSupportMethods(): Promise<ApiResult<SupportMethod[]>> {
+  // A short cache: a corrected paybill number should reach supporters quickly,
+  // because the wrong one sends money to the wrong place.
+  const result = await request("/support-methods", supportMethodsResponseSchema, 60);
+  return result.ok ? { ok: true, data: result.data.data } : result;
+}
+
+export async function getSocialLinks(): Promise<ApiResult<SocialLink[]>> {
+  const result = await request("/social-links", socialLinksResponseSchema, 3600);
+  return result.ok ? { ok: true, data: result.data.data } : result;
 }
 

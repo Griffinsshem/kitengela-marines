@@ -350,3 +350,27 @@ export const videosResponseSchema = z.object({
 
 export type GalleryDetail = z.infer<typeof galleryDetailSchema>;
 export type Video = z.infer<typeof videoSchema>;
+
+// --- support ---------------------------------------------------------------
+
+export const supportMethodSchema = z.object({
+  name: z.string(),
+  kind: z.string(),
+  account_label: z.string().nullable(),
+  account_value: z.string().nullable(),
+  account_name: z.string().nullable(),
+  instructions: z.string().nullable(),
+});
+
+export const socialLinkSchema = z.object({
+  platform: z.string(),
+  url: z.string(),
+  handle: z.string().nullable(),
+});
+
+export const supportMethodsResponseSchema = z.object({ data: z.array(supportMethodSchema) });
+export const socialLinksResponseSchema = z.object({ data: z.array(socialLinkSchema) });
+
+export type SupportMethod = z.infer<typeof supportMethodSchema>;
+export type SocialLink = z.infer<typeof socialLinkSchema>;
+
