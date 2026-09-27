@@ -28,6 +28,7 @@ const NAV: NavItem[] = [
   { href: "/admin/media", label: "Media", capability: "manage_media" },
   { href: "/admin/squad", label: "Squad", capability: "manage_squad" },
   { href: "/admin/fixtures", label: "Fixtures", capability: "manage_fixtures" },
+  { href: "/admin/submissions", label: "Messages", capability: "manage_club" },
   { href: "/admin/club", label: "Club settings", capability: "manage_club" },
 ];
 
