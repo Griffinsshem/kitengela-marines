@@ -47,7 +47,6 @@ export function buildNavigation(teams: readonly Team[]): NavItem[] {
       label: "Club",
       links: [
         { label: "About", href: "/club" },
-        { label: "History", href: "/club/history" },
         { label: "Staff", href: "/club/staff" },
       ],
     },

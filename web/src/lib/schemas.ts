@@ -31,6 +31,8 @@ export const clubSchema = z.object({
   contact_phone: z.string().nullable(),
   summary: z.string().nullable(),
   mission: z.string().nullable(),
+  values: z.array(z.string()),
+  training_times: z.array(z.string()),
 });
 
 export const teamsResponseSchema = z.object({ data: z.array(teamSchema) });

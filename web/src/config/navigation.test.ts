@@ -39,7 +39,7 @@ describe("buildNavigation", () => {
 
 describe("active state", () => {
   it("marks nested pages as active", () => {
-    expect(isActivePath("/club/history", "/club")).toBe(true);
+    expect(isActivePath("/club/staff", "/club")).toBe(true);
     expect(isActivePath("/clubhouse", "/club")).toBe(false);
   });
 
