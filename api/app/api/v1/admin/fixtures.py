@@ -360,3 +360,30 @@ def list_seasons_admin() -> tuple[Response, int]:
             ]
         }
     ), 200
+
+
+@api_v1.get("/admin/competitions")
+@require_capability(Capability.MANAGE_FIXTURES)
+def list_competitions_admin() -> tuple[Response, int]:
+    """Competitions with their ids, which the public listing omits.
+
+    The public endpoint returns seasons for supporters to browse; this one
+    returns competitions for the editor that creates seasons against them.
+    """
+    competitions = db.session.scalars(select(Competition).order_by(Competition.name)).all()
+
+    return jsonify(
+        {
+            "data": [
+                {
+                    "id": str(competition.id),
+                    "name": competition.name,
+                    "short_name": competition.short_name,
+                    "slug": competition.slug,
+                    "has_standings": competition.has_standings,
+                    "is_active": competition.is_active,
+                }
+                for competition in competitions
+            ]
+        }
+    ), 200
