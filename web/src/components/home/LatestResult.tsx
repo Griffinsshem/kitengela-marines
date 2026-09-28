@@ -22,8 +22,7 @@ export function LatestResult({ result }: { result: ApiResult<Fixture | null> }) 
           <UnavailableState what="The latest result" />
         ) : result.data === null ? (
           <EmptyState title="No matches played yet">
-            Results will appear here once Kitengela Marines and Marines Starlets begin their
-            season.
+            Results appear here as soon as a match has been played.
           </EmptyState>
         ) : (
           <div className="max-w-3xl">

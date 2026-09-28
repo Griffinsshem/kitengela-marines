@@ -25,8 +25,7 @@ export function NextMatch({ result }: { result: ApiResult<Fixture | null> }) {
     return (
       <Panel title="Next match">
         <p className="text-chalk/75">
-          Kajiado County League fixtures will appear here as soon as they are officially
-          announced.
+          The next match will appear here as soon as it is announced.
         </p>
       </Panel>
     );

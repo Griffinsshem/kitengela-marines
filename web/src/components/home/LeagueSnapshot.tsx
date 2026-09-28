@@ -57,7 +57,8 @@ export function LeagueSnapshot({ result }: { result: ApiResult<Snapshot> }) {
               Season preparation
             </p>
             <p className="mx-auto mt-3 max-w-md text-chalk/75">
-              The standings will appear here once the Kajiado County League season is under way.
+              League standings appear here once a league season is under way. Friendlies and cup
+              ties keep no table.
             </p>
           </div>
         )}

@@ -37,7 +37,7 @@ export default async function FixturesPage({ searchParams }: Search) {
           <UnavailableState what="Fixtures" />
         ) : fixtures.data.items.length === 0 ? (
           <EmptyState title="No fixtures announced">
-            Kajiado County League fixtures will appear here once they are officially announced.
+            Fixtures appear here as soon as the club announces them.
           </EmptyState>
         ) : (
           <>

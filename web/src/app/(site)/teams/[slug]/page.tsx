@@ -82,7 +82,7 @@ export default async function TeamPage({ params }: Params) {
             </div>
           ) : (
             <EmptyState title="No fixture announced">
-              Kajiado County League fixtures will appear here once they are officially announced.
+              This team&rsquo;s next match will appear here once it is announced.
             </EmptyState>
           )}
 

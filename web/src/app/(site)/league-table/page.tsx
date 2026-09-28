@@ -7,7 +7,7 @@ import { getStandings } from "@/lib/api";
 
 export const metadata: Metadata = {
   title: "League table",
-  description: "Kajiado County League standings.",
+  description: "League standings for Kitengela Marines and Marines Starlets.",
 };
 
 export default async function LeagueTablePage() {
@@ -25,8 +25,8 @@ export default async function LeagueTablePage() {
           <UnavailableState what="The league table" />
         ) : result.data.rows.length === 0 ? (
           <EmptyState title="Season preparation">
-            The Kajiado County League table will appear here once the season is under way. The
-            club maintains it from the league&rsquo;s official results.
+            A league table appears here once a league season is under way, maintained by the club
+            from the official results. Friendlies and cup ties keep no table.
           </EmptyState>
         ) : (
           <LeagueTable rows={result.data.rows} />
