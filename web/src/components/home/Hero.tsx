@@ -43,7 +43,7 @@ export function Hero({
           />
           <div
             aria-hidden="true"
-            className="absolute inset-0 -z-10 bg-gradient-to-t from-pitch via-pitch/80 to-pitch/40"
+            className="absolute inset-0 -z-10 bg-gradient-to-t from-pitch via-pitch/85 to-pitch/60"
           />
         </>
       ) : null}

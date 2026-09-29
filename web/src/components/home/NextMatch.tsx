@@ -42,8 +42,10 @@ export function NextMatch({ result }: { result: ApiResult<Fixture | null> }) {
 }
 
 function Panel({ title, children }: { title: string; children: ReactNode }) {
+  // Opaque enough to read over a photograph: a 5% white tint looks like a
+  // panel on flat colour and disappears entirely over an image.
   return (
-    <div className="border border-chalk/20 bg-chalk/5 p-6">
+    <div className="border border-chalk/25 bg-pitch/85 p-6 backdrop-blur-sm">
       <p className="text-meta font-semibold uppercase tracking-widest text-accent-glow">{title}</p>
       <div className="mt-3">{children}</div>
     </div>
