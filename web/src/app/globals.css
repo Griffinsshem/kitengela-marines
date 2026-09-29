@@ -222,3 +222,25 @@
     animation: none;
   }
 }
+
+/*
+ * Keyboard focus.
+ *
+ * The browser default is a thin outline that all but disappears against the
+ * club's dark green, so anyone navigating by keyboard loses their place. This
+ * is deliberately loud: a ring in the team accent, bright enough to hold up on
+ * the pitch colour and on chalk alike.
+ *
+ * :focus-visible rather than :focus, so a mouse click does not leave a ring
+ * behind on something that was merely pressed.
+ */
+:focus-visible {
+  outline: 3px solid var(--team-accent-glow, #8fe3b4);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.bg-chalk :focus-visible,
+.bg-turf :focus-visible {
+  outline-color: var(--team-accent-ink, #03994b);
+}
