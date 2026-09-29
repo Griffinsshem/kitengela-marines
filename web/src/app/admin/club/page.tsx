@@ -1,10 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/admin/AuthProvider";
 import { ClubStaff } from "@/components/admin/ClubStaff";
 import { CONTROL_CLASSES, Field } from "@/components/admin/Field";
+import { MediaPicker } from "@/components/admin/MediaPicker";
 
 /**
  * The club's own details.
@@ -27,6 +29,9 @@ type ClubDraft = {
   mission: string;
   values_text: string;
   training_times: string;
+  hero_image_id: string;
+  hero_image_url: string;
+  hero_image_alt: string;
 };
 
 const BLANK: ClubDraft = {
@@ -42,6 +47,9 @@ const BLANK: ClubDraft = {
   mission: "",
   values_text: "",
   training_times: "",
+  hero_image_id: "",
+  hero_image_url: "",
+  hero_image_alt: "",
 };
 
 export default function AdminClubPage() {
@@ -76,6 +84,13 @@ export default function AdminClubPage() {
             mission: String(club.mission ?? ""),
             values_text: String(club.values_text ?? ""),
             training_times: String(club.training_times_text ?? ""),
+            hero_image_id: String(club.hero_image_id ?? ""),
+            hero_image_url: String(
+              (club.hero_image as { url?: string } | null | undefined)?.url ?? "",
+            ),
+            hero_image_alt: String(
+              (club.hero_image as { alt?: string } | null | undefined)?.alt ?? "",
+            ),
           });
         }
       }
@@ -116,6 +131,7 @@ export default function AdminClubPage() {
         mission: optional(draft.mission),
         values_text: optional(draft.values_text),
         training_times: optional(draft.training_times),
+        hero_image_id: draft.hero_image_id || null,
       }),
     });
 
@@ -278,6 +294,58 @@ export default function AdminClubPage() {
               className={CONTROL_CLASSES}
             />
           </Field>
+        </div>
+
+        <div className="mt-6 border border-line p-4">
+          <p className="text-meta font-semibold">Home page photograph</p>
+          <p className="mt-1 max-w-2xl text-meta text-muted">
+            Fills the band behind the club&rsquo;s name on the home page. A wide photograph of
+            the team or a match works best; without one the page shows the name on the club
+            colours, which is deliberate rather than unfinished.
+          </p>
+
+          {draft.hero_image_url ? (
+            <div className="mt-4 flex flex-wrap items-start gap-4">
+              <Image
+                src={draft.hero_image_url}
+                alt={draft.hero_image_alt}
+                width={320}
+                height={180}
+                className="h-28 w-auto object-cover"
+              />
+              <div>
+                <p className="text-meta">{draft.hero_image_alt}</p>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setDraft({
+                      ...draft,
+                      hero_image_id: "",
+                      hero_image_url: "",
+                      hero_image_alt: "",
+                    })
+                  }
+                  className="mt-2 text-meta font-semibold underline underline-offset-4"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ) : null}
+
+          <div className="mt-4">
+            <MediaPicker
+              label={draft.hero_image_url ? "Choose a different photograph" : "Choose a photograph"}
+              onSelect={(asset) =>
+                setDraft((current) => ({
+                  ...current,
+                  hero_image_id: asset.id,
+                  hero_image_url: asset.url,
+                  hero_image_alt: asset.alt,
+                }))
+              }
+            />
+          </div>
         </div>
 
         {error ? (

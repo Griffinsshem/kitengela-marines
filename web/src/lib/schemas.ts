@@ -19,6 +19,15 @@ export const teamSchema = z.object({
   summary: z.string().nullable(),
 });
 
+/** An uploaded image, as every endpoint that references one returns it. */
+export const mediaAssetSchema = z.object({
+  url: z.string(),
+  alt: z.string(),
+  caption: z.string().nullable(),
+  width: z.number(),
+  height: z.number(),
+});
+
 export const clubSchema = z.object({
   name: z.string(),
   short_name: z.string(),
@@ -33,6 +42,7 @@ export const clubSchema = z.object({
   mission: z.string().nullable(),
   values: z.array(z.string()),
   training_times: z.array(z.string()),
+  hero_image: mediaAssetSchema.nullable(),
 });
 
 export const teamsResponseSchema = z.object({ data: z.array(teamSchema) });
@@ -55,14 +65,6 @@ export const teamRefSchema = z.object({
   short_name: z.string(),
   slug: z.string(),
   accent_key: z.string(),
-});
-
-export const mediaAssetSchema = z.object({
-  url: z.string(),
-  alt: z.string(),
-  caption: z.string().nullable(),
-  width: z.number(),
-  height: z.number(),
 });
 
 // --- matches ---------------------------------------------------------------

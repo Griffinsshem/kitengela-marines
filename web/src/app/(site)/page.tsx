@@ -42,7 +42,10 @@ export default async function HomePage() {
 
   return (
     <>
-      <Hero club={club.ok ? club.data : null}>
+      <Hero
+        club={club.ok ? club.data : null}
+        image={club.ok ? (club.data?.hero_image ?? null) : null}
+      >
         <NextMatch result={nextFixture} />
       </Hero>
       <LatestResult result={latestResult} />
