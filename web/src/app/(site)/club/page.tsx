@@ -1,3 +1,13 @@
+import {
+  Barbell,
+  Fire,
+  Handshake,
+  HeartStraight,
+  ShieldCheck,
+  Star,
+  Target,
+  UsersThree,
+} from "@phosphor-icons/react/dist/ssr";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -5,6 +15,22 @@ import { ButtonLink } from "@/components/ui/Button";
 import { EmptyState, UnavailableState } from "@/components/ui/EmptyState";
 import { Section, SectionHeading } from "@/components/ui/Section";
 import { getClub, getTeams } from "@/lib/api";
+
+/**
+ * A value is an abstract word, and a wall of them reads as a list. An icon per
+ * value gives each one something to hold on to. Matched by name, with a
+ * neutral fallback, because the club may add its own.
+ */
+const VALUE_ICON: Record<string, typeof Star> = {
+  respect: Handshake,
+  commitment: Target,
+  teamwork: UsersThree,
+  "team work": UsersThree,
+  compassion: HeartStraight,
+  integrity: ShieldCheck,
+  discipline: Barbell,
+  passion: Fire,
+};
 
 export const metadata: Metadata = {
   title: "About the club",
@@ -74,15 +100,29 @@ export default async function ClubPage() {
       {details.values.length > 0 ? (
         <Section tone="turf">
           <SectionHeading label="The club" title="What we stand for" />
-          <ul className="mt-8 grid gap-px border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
-            {details.values.map((value) => (
-              <li
-                key={value}
-                className="bg-chalk px-5 py-8 font-display text-2xl font-extrabold uppercase"
-              >
-                {value}
-              </li>
-            ))}
+          {/* Each card carries its own border. A single grid with a gap-px
+              background left a phantom cell whenever the count was not a
+              multiple of the column count — seven values in four columns
+              showed an empty grey box. */}
+          <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {details.values.map((value) => {
+              const Icon = VALUE_ICON[value.toLowerCase()] ?? Star;
+              return (
+                <li
+                  key={value}
+                  className="reveal flex items-center gap-4 border border-line bg-chalk px-5 py-6"
+                >
+                  <Icon
+                    aria-hidden="true"
+                    weight="duotone"
+                    className="size-8 shrink-0 text-accent-ink"
+                  />
+                  <span className="font-display text-2xl font-extrabold uppercase leading-none">
+                    {value}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         </Section>
       ) : null}
@@ -92,7 +132,7 @@ export default async function ClubPage() {
           <SectionHeading label="The club" title="Our teams" />
           <ul className="mt-8 grid gap-6 md:grid-cols-2">
             {teams.data.map((team) => (
-              <li key={team.id} data-team={team.accent_key}>
+              <li key={team.id} data-team={team.accent_key} className="reveal">
                 <Link
                   href={`/teams/${team.slug}`}
                   className="group flex h-full min-h-40 flex-col justify-end bg-accent p-6 text-chalk transition hover:brightness-110"
@@ -119,7 +159,7 @@ export default async function ClubPage() {
 
           <ul className="mt-8 grid gap-px border border-chalk/20 bg-chalk/20 sm:grid-cols-2">
             {details.training_times.map((session) => (
-              <li key={session} className="bg-pitch px-5 py-6 text-lg font-semibold">
+              <li key={session} className="reveal bg-pitch px-5 py-6 text-lg font-semibold">
                 {session}
               </li>
             ))}
