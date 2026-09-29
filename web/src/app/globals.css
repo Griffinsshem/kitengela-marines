@@ -194,3 +194,31 @@
   font-size: 1.25rem;
   font-style: italic;
 }
+
+/*
+ * Skeleton pulse.
+ *
+ * Gentler than Tailwind's default pulse, which is brisk enough to feel urgent
+ * on a page that may be waiting several seconds. Motion is removed entirely
+ * for anyone who has asked their system for less of it; the skeleton still
+ * shows, it simply stops breathing.
+ */
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-soft {
+    animation: none;
+  }
+}
