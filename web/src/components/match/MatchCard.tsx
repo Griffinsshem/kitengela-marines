@@ -1,3 +1,4 @@
+import { CalendarBlank, Clock, MapPin } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 
 import { formatDayMonth, formatKickoff, formatMatchDate } from "@/lib/datetime";
@@ -54,7 +55,7 @@ export function MatchCard({
             {home}
           </p>
           {fixture.is_completed ? (
-            <p className="font-display text-score font-black tabular-nums leading-none">
+            <p className="whitespace-nowrap font-display text-score font-black tabular-nums leading-none">
               {fixture.home_score}
               <span className={dark ? "px-2 text-accent-glow" : "px-2 text-accent-ink"}>–</span>
               {fixture.away_score}
@@ -75,19 +76,28 @@ export function MatchCard({
         >
           {date ? (
             <div>
-              <dt className={dark ? "text-chalk/60" : "text-muted"}>Date</dt>
+              <dt className={cn("flex items-center gap-1.5", dark ? "text-chalk/60" : "text-muted")}>
+                <CalendarBlank aria-hidden="true" weight="bold" className="size-4 shrink-0" />
+                Date
+              </dt>
               <dd className="font-semibold">{date}</dd>
             </div>
           ) : null}
           {kickoff ? (
             <div>
-              <dt className={dark ? "text-chalk/60" : "text-muted"}>Kick-off</dt>
+              <dt className={cn("flex items-center gap-1.5", dark ? "text-chalk/60" : "text-muted")}>
+                <Clock aria-hidden="true" weight="bold" className="size-4 shrink-0" />
+                Kick-off
+              </dt>
               <dd className="font-semibold tabular-nums">{kickoff}</dd>
             </div>
           ) : null}
           {fixture.venue_name ? (
             <div>
-              <dt className={dark ? "text-chalk/60" : "text-muted"}>Venue</dt>
+              <dt className={cn("flex items-center gap-1.5", dark ? "text-chalk/60" : "text-muted")}>
+                <MapPin aria-hidden="true" weight="bold" className="size-4 shrink-0" />
+                Venue
+              </dt>
               <dd className="font-semibold">{fixture.venue_name}</dd>
             </div>
           ) : null}

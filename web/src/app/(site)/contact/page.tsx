@@ -1,3 +1,4 @@
+import { EnvelopeSimple, MapPin, Phone } from "@phosphor-icons/react/dist/ssr";
 import type { Metadata } from "next";
 
 import { ContactForm } from "@/components/forms/ContactForm";
@@ -46,7 +47,10 @@ export default async function ContactPage() {
               <dl className="mt-4 space-y-4">
                 {details.contact_phone ? (
                   <div>
-                    <dt className="text-meta text-muted">Phone</dt>
+                    <dt className="flex items-center gap-1.5 text-meta text-muted">
+                      <Phone aria-hidden="true" weight="bold" className="size-4 shrink-0" />
+                      Phone
+                    </dt>
                     <dd className="font-semibold">
                       <a
                         href={`tel:${details.contact_phone.replace(/\s/g, "")}`}
@@ -60,7 +64,10 @@ export default async function ContactPage() {
 
                 {details.contact_email ? (
                   <div>
-                    <dt className="text-meta text-muted">Email</dt>
+                    <dt className="flex items-center gap-1.5 text-meta text-muted">
+                      <EnvelopeSimple aria-hidden="true" weight="bold" className="size-4 shrink-0" />
+                      Email
+                    </dt>
                     <dd className="font-semibold">
                       <a
                         href={`mailto:${details.contact_email}`}
@@ -74,7 +81,10 @@ export default async function ContactPage() {
 
                 {details.home_ground ? (
                   <div>
-                    <dt className="text-meta text-muted">Home ground</dt>
+                    <dt className="flex items-center gap-1.5 text-meta text-muted">
+                      <MapPin aria-hidden="true" weight="bold" className="size-4 shrink-0" />
+                      Home ground
+                    </dt>
                     <dd className="font-semibold">{details.home_ground}</dd>
                   </div>
                 ) : null}

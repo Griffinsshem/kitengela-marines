@@ -1,3 +1,4 @@
+import { Bank, DeviceMobile, HandHeart, Storefront } from "@phosphor-icons/react/dist/ssr";
 import type { Metadata } from "next";
 
 import { ButtonLink } from "@/components/ui/Button";
@@ -9,6 +10,19 @@ import type { SupportMethod } from "@/lib/schemas";
 export const metadata: Metadata = {
   title: "Support the club",
   description: "Ways to support Kitengela Marines and Marines Starlets.",
+};
+
+/**
+ * An icon per kind, so a paybill is distinguishable from a bank transfer
+ * before reading a word.
+ */
+const KIND_ICON: Record<string, typeof Bank> = {
+  mpesa_paybill: DeviceMobile,
+  mpesa_till: Storefront,
+  mpesa_send_money: DeviceMobile,
+  bank_transfer: Bank,
+  in_kind: HandHeart,
+  other: HandHeart,
 };
 
 const KIND_LABEL: Record<string, string> = {
@@ -83,7 +97,11 @@ export default async function SupportPage() {
 function SupportCard({ method }: { method: SupportMethod }) {
   return (
     <article className="h-full border border-line bg-chalk p-6">
-      <p className="text-meta font-semibold text-accent-ink">
+      <p className="flex items-center gap-2 text-meta font-semibold text-accent-ink">
+        {(() => {
+          const Icon = KIND_ICON[method.kind] ?? HandHeart;
+          return <Icon aria-hidden="true" weight="bold" className="size-5 shrink-0" />;
+        })()}
         {KIND_LABEL[method.kind] ?? method.kind}
       </p>
       <h2 className="mt-1 font-display text-xl font-extrabold uppercase">{method.name}</h2>
