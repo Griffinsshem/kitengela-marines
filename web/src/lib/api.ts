@@ -56,6 +56,18 @@ const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000").rep
 // A slow API must not hold a page render hostage.
 const TIMEOUT_MS = 5000;
 
+/**
+ * A second, patient attempt.
+ *
+ * The API sleeps when the club's site is quiet and takes the better part of a
+ * minute to wake. Five seconds is the right limit for a live page — a
+ * supporter should not wait longer — but it is the wrong limit while the site
+ * is being built, because a page rendered from a failed request is then cached
+ * and served to everyone until it next revalidates. One slow retry is cheaper
+ * than five minutes of a page saying the club's details are unavailable.
+ */
+const WAKE_TIMEOUT_MS = 35000;
+
 export type FailureReason = "not_found" | "unavailable";
 
 export type ApiResult<T> =
@@ -67,12 +79,26 @@ async function request<T>(
   schema: z.ZodType<T>,
   revalidateSeconds: number,
 ): Promise<ApiResult<T>> {
-  try {
-    const response = await fetch(`${API_URL}/api/v1${path}`, {
+  async function attempt(timeoutMs: number) {
+    return fetch(`${API_URL}/api/v1${path}`, {
       next: { revalidate: revalidateSeconds },
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      signal: AbortSignal.timeout(timeoutMs),
       headers: { Accept: "application/json" },
     });
+  }
+
+  try {
+    let response: Response;
+    try {
+      response = await attempt(TIMEOUT_MS);
+    } catch {
+      // Most often a sleeping API, so give it long enough to wake before
+      // deciding the club has no details. A server that is genuinely absent
+      // refuses the connection immediately, so this costs nothing then; it
+      // only spends time when something is actually starting up.
+      console.warn(`API ${path} did not answer in ${TIMEOUT_MS}ms, retrying`);
+      response = await attempt(WAKE_TIMEOUT_MS);
+    }
 
     if (response.status === 404) {
       // Not an error: the thing asked for does not exist.
