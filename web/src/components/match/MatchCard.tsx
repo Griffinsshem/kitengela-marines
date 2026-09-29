@@ -50,10 +50,43 @@ export function MatchCard({
       </header>
 
       <div className="px-5 py-6">
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-          <p className="font-display text-2xl font-extrabold uppercase leading-none sm:text-3xl">
-            {home}
-          </p>
+        {/* Two layouts, because three columns cannot hold two long club names
+            and a score on a 360px screen: the names collide with the digits.
+            Narrow screens read the way a results list does, one club per row
+            with its goals alongside. Wider screens keep the scoreboard. */}
+        <div className="space-y-3 sm:hidden">
+          <div className="flex items-baseline justify-between gap-4">
+            <p className="font-display text-xl font-extrabold uppercase leading-tight">{home}</p>
+            {fixture.is_completed ? (
+              <p className="font-display text-3xl font-black tabular-nums leading-none">
+                {fixture.home_score}
+              </p>
+            ) : null}
+          </div>
+
+          {fixture.is_completed ? null : (
+            <p
+              className={cn(
+                "text-meta font-semibold uppercase tracking-widest",
+                dark ? "text-accent-glow" : "text-accent-ink",
+              )}
+            >
+              v
+            </p>
+          )}
+
+          <div className="flex items-baseline justify-between gap-4">
+            <p className="font-display text-xl font-extrabold uppercase leading-tight">{away}</p>
+            {fixture.is_completed ? (
+              <p className="font-display text-3xl font-black tabular-nums leading-none">
+                {fixture.away_score}
+              </p>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="hidden grid-cols-[1fr_auto_1fr] items-center gap-3 sm:grid">
+          <p className="font-display text-3xl font-extrabold uppercase leading-none">{home}</p>
           {fixture.is_completed ? (
             <p className="whitespace-nowrap font-display text-score font-black tabular-nums leading-none">
               {fixture.home_score}
@@ -63,7 +96,7 @@ export function MatchCard({
           ) : (
             <p className="text-meta font-semibold uppercase tracking-widest">v</p>
           )}
-          <p className="text-right font-display text-2xl font-extrabold uppercase leading-none sm:text-3xl">
+          <p className="text-right font-display text-3xl font-extrabold uppercase leading-none">
             {away}
           </p>
         </div>
