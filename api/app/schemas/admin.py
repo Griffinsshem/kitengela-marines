@@ -510,6 +510,7 @@ class ClubUpsert(StrictModel):
     mission: str | None = None
     values_text: str | None = None
     training_times: str | None = None
+    hero_image_id: uuid.UUID | None = None
 
 
 class SocialLinkCreate(StrictModel):

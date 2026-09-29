@@ -56,6 +56,10 @@ def serialize_club(club: Club) -> dict[str, Any]:
         # Raw text as well, so the admin form can edit what was typed.
         "values_text": club.values_text,
         "training_times_text": club.training_times,
+        "hero_image_id": str(club.hero_image_id) if club.hero_image_id else None,
+        "hero_image": (
+            serialize_media_asset(club.hero_image) if club.hero_image is not None else None
+        ),
     }
 
 

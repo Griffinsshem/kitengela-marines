@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import uuid
 from collections.abc import Iterator
 from typing import Any
 
@@ -292,3 +293,19 @@ def test_production_refuses_the_test_hashing_profile(monkeypatch: pytest.MonkeyP
             CLOUDINARY_API_KEY="key",
             CLOUDINARY_API_SECRET="secret",
         )
+
+
+def test_an_unknown_hero_image_is_refused(
+    session: object, client: FlaskClient, admin: dict[str, str]
+) -> None:
+    """The check must run whether the club is being created or updated: when it
+    sat inside the update branch, creating a club raised instead of validating.
+    """
+    response = client.put(
+        "/api/v1/admin/club",
+        json={**CLUB, "hero_image_id": str(uuid.uuid4())},
+        headers=admin,
+    )
+
+    assert response.status_code == 422
+    assert db.session.query(Club).count() == 0

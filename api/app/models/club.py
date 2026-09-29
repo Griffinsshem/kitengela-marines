@@ -19,6 +19,7 @@ from app.models.enums import SocialPlatform, SupportMethodKind, TeamCategory, Te
 
 if TYPE_CHECKING:
     from app.models.identity import TeamMembership
+    from app.models.media import MediaAsset
     from app.models.people import Player, StaffMember
 
 
@@ -51,12 +52,19 @@ class Club(UUIDPrimaryKey, Timestamped, Base):
     # table would be more machinery than the content deserves.
     values_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     training_times: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # The photograph behind the club's name on the home page. RESTRICT rather
+    # than SET NULL: losing the front page's picture silently, because someone
+    # tidied the media library, is worse than being told to change it first.
+    hero_image_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("media_assets.id", ondelete="RESTRICT"), nullable=True
+    )
 
     teams: Mapped[list[Team]] = relationship(
         back_populates="club",
         cascade="all, delete-orphan",
         order_by="Team.display_order",
     )
+    hero_image: Mapped[MediaAsset | None] = relationship()
 
     def __repr__(self) -> str:
         return f"<Club {self.slug}>"

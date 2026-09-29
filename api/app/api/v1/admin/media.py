@@ -16,6 +16,7 @@ from sqlalchemy import select
 from app.api.v1 import api_v1
 from app.api.v1.admin._helpers import not_found, parse_uuid
 from app.extensions import db, limiter
+from app.models.club import Club
 from app.models.media import Gallery, GalleryItem, MediaAsset
 from app.models.news import Article
 from app.models.outreach import Sponsor
@@ -152,6 +153,8 @@ def delete_media_asset(asset_id: str) -> tuple[Response, int]:
         uses.append("an article")
     if db.session.query(Sponsor).filter_by(logo_asset_id=asset.id).first() is not None:
         uses.append("a sponsor logo")
+    if db.session.query(Club).filter_by(hero_image_id=asset.id).first() is not None:
+        uses.append("the home page")
     if uses:
         raise ApiError(
             f"This photo is used by {' and '.join(uses)}. Remove it there first.",

@@ -14,6 +14,7 @@ from app.api.v1 import api_v1
 from app.api.v1.admin._helpers import commit_or_conflict, not_found, parse_body, parse_uuid
 from app.extensions import db
 from app.models.club import Club, SocialLink, SupportMethod
+from app.models.media import MediaAsset
 from app.schemas.admin import (
     ClubUpsert,
     SocialLinkCreate,
@@ -54,6 +55,17 @@ def upsert_club() -> tuple[Response, int]:
     # EmailStr is not a str as far as the database is concerned.
     if values.get("contact_email") is not None:
         values["contact_email"] = str(values["contact_email"])
+
+    # The same check whether the club is being created or updated, so it runs
+    # before either branch rather than inside one of them.
+    hero_id = values.get("hero_image_id")
+    if hero_id is not None and db.session.get(MediaAsset, hero_id) is None:
+        raise ApiError(
+            "Request validation failed.",
+            status_code=422,
+            code="validation_error",
+            details=[{"field": "hero_image_id", "message": "Unknown media asset."}],
+        )
 
     club = db.session.scalars(select(Club).limit(1)).first()
 
