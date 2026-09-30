@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { Countdown } from "@/components/match/Countdown";
 import { MatchCard } from "@/components/match/MatchCard";
 import type { ApiResult } from "@/lib/api";
 import type { Fixture } from "@/lib/schemas";
@@ -37,6 +38,15 @@ export function NextMatch({ result }: { result: ApiResult<Fixture | null> }) {
         Next match
       </p>
       <MatchCard fixture={result.data} tone="dark" />
+
+      {/* Only where a kick-off time is confirmed. Counting down to a date
+          with no time would be counting to midnight, which is not when
+          anybody plays. */}
+      {result.data.kickoff_at ? (
+        <div className="mt-3 border border-chalk/25 bg-pitch/85 px-6 py-4 backdrop-blur-sm">
+          <Countdown kickoffAt={result.data.kickoff_at} />
+        </div>
+      ) : null}
     </div>
   );
 }
