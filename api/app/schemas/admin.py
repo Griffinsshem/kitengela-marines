@@ -32,6 +32,7 @@ from app.models.enums import (
     MatchEventType,
     PlayerPosition,
     PlayerStatus,
+    RoleKey,
     SocialPlatform,
     SponsorTier,
     StaffRole,
@@ -637,3 +638,26 @@ class ArticleCategoryCreate(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
     name: str = Field(min_length=2, max_length=80)
+
+
+class UserCreate(BaseModel):
+    """A new account for somebody who helps run the club."""
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    email: EmailStr
+    full_name: str = Field(min_length=2, max_length=160)
+    role: RoleKey
+    # Only meaningful for team-scoped roles; ignored for the rest.
+    team_ids: list[uuid.UUID] = Field(default_factory=list)
+
+
+class UserUpdate(BaseModel):
+    """Changing a role, the teams, or whether the account works."""
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    full_name: str | None = Field(default=None, min_length=2, max_length=160)
+    role: RoleKey | None = None
+    team_ids: list[uuid.UUID] | None = None
+    is_active: bool | None = None

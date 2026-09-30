@@ -18,6 +18,7 @@ from app.api.v1.admin import outreach as _outreach  # noqa: F401
 from app.api.v1.admin import players as _players  # noqa: F401
 from app.api.v1.admin import staff as _staff  # noqa: F401
 from app.api.v1.admin import teams as _teams  # noqa: F401
+from app.api.v1.admin import users as _users  # noqa: F401
 from app.api.v1.admin import videos as _videos  # noqa: F401
 
 _admin_routes = (
