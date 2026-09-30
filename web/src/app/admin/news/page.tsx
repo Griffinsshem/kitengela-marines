@@ -55,6 +55,12 @@ export default function AdminNewsPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="font-display text-headline font-extrabold uppercase">News</h1>
         <Link
+          href="/admin/news/categories"
+          className="rounded-control border border-line px-5 py-2.5 font-semibold"
+        >
+          Categories
+        </Link>
+        <Link
           href="/admin/news/new"
           className="rounded-control bg-highlight px-5 py-2.5 font-semibold text-on-highlight"
         >

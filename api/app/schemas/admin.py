@@ -629,3 +629,11 @@ class SubmissionUpdate(StrictModel):
 
     status: SubmissionStatus | None = None
     internal_note: str | None = Field(default=None, max_length=2000)
+
+
+class ArticleCategoryCreate(BaseModel):
+    """A news category the club files stories under."""
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    name: str = Field(min_length=2, max_length=80)

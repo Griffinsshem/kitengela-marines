@@ -275,3 +275,21 @@
     }
   }
 }
+
+/*
+ * A row that scrolls sideways.
+ *
+ * A chip clipped flat against the edge of a card looks broken. Fading it out
+ * says the row continues, which is the only cue a supporter gets once the
+ * scrollbar is hidden. Removed above the small breakpoint, where the row
+ * wraps and there is nothing to scroll.
+ */
+.edge-fade {
+  mask-image: linear-gradient(to right, black calc(100% - 1.5rem), transparent 100%);
+}
+
+@media (min-width: 640px) {
+  .edge-fade {
+    mask-image: none;
+  }
+}

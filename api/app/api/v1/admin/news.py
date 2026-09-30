@@ -23,7 +23,7 @@ from app.models.enums import ArticleStatus
 from app.models.match import Fixture
 from app.models.media import MediaAsset
 from app.models.news import Article, ArticleCategory
-from app.schemas.admin import ArticleCreate, ArticlePublish, ArticleUpdate
+from app.schemas.admin import ArticleCategoryCreate, ArticleCreate, ArticlePublish, ArticleUpdate
 from app.schemas.public import serialize_article_admin
 from app.security.authorization import current_user, require_capability
 from app.security.permissions import Capability
@@ -205,3 +205,60 @@ def list_article_categories_admin() -> tuple[Response, int]:
             ]
         }
     ), 200
+
+
+@api_v1.post("/admin/article-categories")
+@require_capability(Capability.MANAGE_NEWS)
+def create_article_category() -> tuple[Response, int]:
+    """Add a category.
+
+    Categories were seeded once and never manageable, which left the club's
+    news sections as whatever a setup command decided. A club that starts a
+    youth side should be able to file news under it.
+    """
+    payload = parse_body(ArticleCategoryCreate)
+    set_action("article_category.created")
+
+    category = ArticleCategory(
+        name=payload.name,
+        slug=unique_slug(
+            payload.name,
+            lambda candidate: (
+                db.session.query(ArticleCategory).filter_by(slug=candidate).first() is not None
+            ),
+        ),
+    )
+    db.session.add(category)
+    commit_or_conflict("That category could not be created.")
+
+    return jsonify(
+        {"data": {"id": str(category.id), "name": category.name, "slug": category.slug}}
+    ), 201
+
+
+@api_v1.delete("/admin/article-categories/<category_id>")
+@require_capability(Capability.MANAGE_NEWS)
+def delete_article_category(category_id: str) -> tuple[Response, int]:
+    """Remove a category, unless news is filed under it.
+
+    Refused rather than cascaded: deleting a category should never quietly
+    take the club's articles with it, and the refusal says how many are in the
+    way so whoever asked knows what to move.
+    """
+    category = db.session.get(ArticleCategory, parse_uuid(category_id, "category id"))
+    if category is None:
+        not_found("Category not found.")
+
+    in_use = db.session.query(Article).filter_by(category_id=category.id).count()
+    if in_use:
+        raise ApiError(
+            f"{in_use} article{'s' if in_use != 1 else ''} still use this category.",
+            status_code=409,
+            code="conflict",
+        )
+
+    set_action("article_category.deleted")
+    db.session.delete(category)
+    commit_or_conflict("That category could not be deleted.")
+
+    return jsonify({}), 204

@@ -9,7 +9,16 @@ from flask import Flask
 from flask.testing import FlaskClient
 
 from app.extensions import db
-from app.models import Article, ArticleStatus, AuditLog, Role, RoleKey, TeamGender, User
+from app.models import (
+    Article,
+    ArticleCategory,
+    ArticleStatus,
+    AuditLog,
+    Role,
+    RoleKey,
+    TeamGender,
+    User,
+)
 from app.utils.sanitize import sanitize_html
 from tests import factories
 
@@ -349,3 +358,35 @@ def test_admin_category_list_carries_ids_and_needs_news_capability(
         "/api/v1/admin/article-categories", headers=auth(client, "manager@example.com")
     )
     assert refused.status_code == 403
+
+
+def test_a_category_can_be_created(
+    session: object, client: FlaskClient, media: dict[str, str]
+) -> None:
+    response = client.post(
+        "/api/v1/admin/article-categories",
+        json={"name": "Youth Team"},
+        headers=media,
+    )
+
+    assert response.status_code == 201
+    assert response.get_json()["data"]["slug"] == "youth-team"
+
+
+def test_a_category_in_use_cannot_be_deleted(
+    session: object, client: FlaskClient, media: dict[str, str]
+) -> None:
+    """Deleting a category must never quietly take the club's articles."""
+    category = factories.article_category(name="Youth Team")
+    factories.article(category, title="Youth win opener")
+    db.session.commit()
+
+    refused = client.delete(f"/api/v1/admin/article-categories/{category.id}", headers=media)
+    assert refused.status_code == 409
+    assert db.session.get(ArticleCategory, category.id) is not None
+
+    spare = factories.article_category(name="Community")
+    db.session.commit()
+
+    removed = client.delete(f"/api/v1/admin/article-categories/{spare.id}", headers=media)
+    assert removed.status_code == 204

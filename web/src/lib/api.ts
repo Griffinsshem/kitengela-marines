@@ -96,7 +96,8 @@ async function request<T>(
       // deciding the club has no details. A server that is genuinely absent
       // refuses the connection immediately, so this costs nothing then; it
       // only spends time when something is actually starting up.
-      console.warn(`API ${path} did not answer in ${TIMEOUT_MS}ms, retrying`);
+      // Could be a timeout or a refused connection; the retry tells them apart.
+      console.warn(`API ${path} first attempt failed, retrying patiently`);
       response = await attempt(WAKE_TIMEOUT_MS);
     }
 

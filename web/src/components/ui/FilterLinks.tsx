@@ -37,7 +37,9 @@ export function FilterLinks({
     <nav
       aria-label={label}
       className={cn(
-        "-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 sm:mx-0 sm:flex-wrap sm:px-0",
+        "edge-fade -mx-5 flex snap-x snap-proximity scroll-px-5 gap-2 overflow-x-auto px-5 pb-1",
+        // Once the row fits, it behaves as an ordinary wrapping group again.
+        "sm:mx-0 sm:flex-wrap sm:snap-none sm:px-0",
         // The scrollbar is noise on a row of six chips; the overflow still
         // scrolls by touch, by wheel and by keyboard focus.
         "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
@@ -51,7 +53,7 @@ export function FilterLinks({
             href={option.value ? `${basePath}?${paramName}=${option.value}` : basePath}
             aria-current={active ? "true" : undefined}
             className={cn(
-              "inline-flex min-h-10 shrink-0 items-center rounded-control border px-4 font-semibold",
+              "inline-flex min-h-10 shrink-0 snap-start items-center rounded-control border px-4 font-semibold",
               active ? "border-accent-ink bg-accent-ink text-chalk" : "border-line hover:bg-turf",
             )}
           >
