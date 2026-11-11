@@ -119,7 +119,7 @@ Runs, stopping at the first failure:
 | `api` | `ruff check`, `ruff format --check`, `mypy app`, `pytest` |
 | `web` | `eslint`, `tsc --noEmit`, `vitest run`, `next build` |
 
-Currently **226 API tests** and **26 site tests**. A pre-commit hook runs the same thing.
+Currently **226 API tests** and **35 site tests**. A pre-commit hook runs the same thing.
 
 Two habits that have caught real bugs:
 
@@ -193,7 +193,7 @@ Around **$7 a month** removes this entirely.
 
 **Payment details are published only when the club says so.** Support methods default to inactive. An account number on a public page invites a doctored screenshot with somebody else's number, so the decision stays with the club and needs no code change.
 
-**Motion is driven by scroll position, not JavaScript**, and stops entirely under `prefers-reduced-motion`.
+**Motion is a system, not decoration.** Section reveals, the scoreboard roll, the league table's sweep and the reading progress bar are driven by scroll position in CSS; entrances run as the HTML paints; page changes use the View Transitions API, so a player's photograph morphs into their profile. Nothing waits on hydration, nothing animates layout, and everything stops entirely under `prefers-reduced-motion`. JavaScript is used for motion in two places only: the fixture ticket stack's swipe and the season totals' roll. The rules are in [docs/design-system.md](docs/design-system.md#motion).
 
 ---
 
@@ -201,13 +201,12 @@ Around **$7 a month** removes this entirely.
 
 In rough order of how much they matter.
 
-1. **User accounts cannot be created from the admin.** Adding a Team Manager or Media Officer needs `flask seed admin` on a developer's machine. The club cannot delegate without help.
-2. **No crest.** The tab icon and share image are generated wordmarks; both are single files to replace once the club supplies one.
-3. **Team captain is not modelled.** There is no field, so the site cannot mark one.
-4. **Player statistics are only as complete as what is entered.** Line-ups and events are optional, so a rushed entry records only a score.
-5. **No email notifications.** Contact and partnership messages are stored and read in the admin. An endpoint that emails on an anonymous request is a way to harass people through the club's own address.
-6. **Constraint naming.** No naming convention is configured, so PostgreSQL invents constraint names and Alembic cannot guess them when generating a downgrade. Three migrations needed names added by hand.
-7. **The health check does not verify storage.** A wrong Cloudinary credential passes startup and fails at the first upload, where a Media Officer sees only "an unexpected error occurred".
+1. **No crest.** The tab icon and share image are generated wordmarks; both are single files to replace once the club supplies one.
+2. **Team captain is not modelled.** There is no field, so the site cannot mark one.
+3. **Player statistics are only as complete as what is entered.** The team page's form guide and season record are derived from results, so they share this limit. Line-ups and events are optional, so a rushed entry records only a score.
+4. **No email notifications.** Contact and partnership messages are stored and read in the admin. An endpoint that emails on an anonymous request is a way to harass people through the club's own address.
+5. **Constraint naming.** No naming convention is configured, so PostgreSQL invents constraint names and Alembic cannot guess them when generating a downgrade. Three migrations needed names added by hand.
+6. **The health check does not verify storage.** A wrong Cloudinary credential passes startup and fails at the first upload, where a Media Officer sees only "an unexpected error occurred".
 
 ---
 
