@@ -12,6 +12,10 @@ import type { MediaAsset } from "@/lib/schemas";
  * and the backdrop. Left and right arrows move between photographs, which is
  * what anyone who has used a photo viewer will try first.
  *
+ * Opening scales the viewer up from just under full size over a fading
+ * backdrop (`.viewer-dialog` in globals.css), so the photograph appears to
+ * come forward out of the grid rather than replace the page.
+ *
  * The grid is the real content: with JavaScript unavailable the thumbnails
  * still render and still carry their captions, and only the enlargement is
  * lost.
@@ -37,6 +41,9 @@ export function Lightbox({ photos }: { photos: MediaAsset[] }) {
     if (index === null) return;
 
     function onKey(event: KeyboardEvent) {
+      // The last photograph stays mounted while the viewer fades out, so the
+      // arrows answer only while it is actually open.
+      if (!dialogRef.current?.open) return;
       if (event.key === "ArrowRight") move(1);
       if (event.key === "ArrowLeft") move(-1);
     }
@@ -51,7 +58,8 @@ export function Lightbox({ photos }: { photos: MediaAsset[] }) {
   }
 
   function close() {
-    setIndex(null);
+    // The photograph is left in place rather than cleared, so the viewer
+    // fades out showing it instead of collapsing to an empty frame.
     dialogRef.current?.close();
   }
 
@@ -59,7 +67,7 @@ export function Lightbox({ photos }: { photos: MediaAsset[] }) {
 
   return (
     <>
-      <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+      <ul className="stagger grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {photos.map((photo, position) => (
           <li key={photo.url}>
             <button
@@ -67,7 +75,7 @@ export function Lightbox({ photos }: { photos: MediaAsset[] }) {
               onClick={() => open(position)}
               className="group block w-full text-left"
             >
-              <span className="relative block aspect-[4/3] overflow-hidden bg-turf">
+              <span className="card-bar relative block aspect-[4/3] overflow-hidden bg-turf">
                 <Image
                   src={photo.url}
                   alt={photo.alt}
@@ -86,8 +94,7 @@ export function Lightbox({ photos }: { photos: MediaAsset[] }) {
 
       <dialog
         ref={dialogRef}
-        onClose={() => setIndex(null)}
-        className="max-h-[92dvh] w-full max-w-5xl bg-transparent p-0 backdrop:bg-pitch/90"
+        className="viewer-dialog max-h-[92dvh] w-full max-w-5xl bg-transparent p-0 backdrop:bg-pitch/90"
       >
         {current ? (
           <figure className="bg-pitch text-chalk">

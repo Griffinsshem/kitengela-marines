@@ -32,7 +32,7 @@ export default async function VideosPage({ searchParams }: Search) {
           </EmptyState>
         ) : (
           <>
-            <ul className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="stagger grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
               {result.data.items.map((video) => (
                 <li key={video.slug}>
                   <VideoPlayer video={video} />

@@ -196,30 +196,39 @@
 }
 
 /*
- * Skeleton pulse.
+ * Skeleton shimmer.
  *
- * Gentler than Tailwind's default pulse, which is brisk enough to feel urgent
- * on a page that may be waiting several seconds. Motion is removed entirely
- * for anyone who has asked their system for less of it; the skeleton still
- * shows, it simply stops breathing.
+ * A slow diagonal band of light crossing the placeholder, rather than a pulse.
+ * A pulse reads as "breathing"; a sweep reads as "working", which is the right
+ * message on a page that may be waiting most of a minute for a sleeping API.
+ * The band is a transformed pseudo-element, so the sweep is composited and
+ * costs nothing on a slow phone. Anyone who has asked for less motion sees a
+ * still placeholder.
  */
-@keyframes pulse-soft {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.55;
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      100deg,
+      transparent 20%,
+      rgb(255 255 255 / 0.6) 50%,
+      transparent 80%
+    );
+    animation: shimmer 1.6s var(--ease-in-out-motion) infinite;
   }
 }
 
-.animate-pulse-soft {
-  animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-pulse-soft {
-    animation: none;
+@keyframes shimmer {
+  to {
+    transform: translateX(100%);
   }
 }
 
@@ -276,3 +285,731 @@
   }
 }
 
+
+/* ==========================================================================
+ * Motion
+ *
+ * The rules every animation below follows, so the site moves as one system:
+ *
+ * 1. Only transform and opacity move (plus a stroke or a shadow where the
+ *    thing being drawn is a line). Nothing animates layout, so nothing makes
+ *    the page jump under a supporter's thumb.
+ * 2. Fast and decisive: 150–700ms, decelerating on the club's quint curve.
+ *    Broadcast graphics snap into place; they do not drift.
+ * 3. CSS first. Reveals are driven by scroll position, entrances by keyframes
+ *    that run as the HTML paints. No JavaScript is needed for any of it, so
+ *    nothing waits on hydration and nothing breaks if a script never arrives.
+ * 4. Every animation lives inside `prefers-reduced-motion: no-preference`.
+ *    Without that preference the content is simply in its final state: not
+ *    a shortened animation, no animation at all.
+ * 5. Motion carries information or it is left out: the order results
+ *    happened, which row is ours, that a form was sent, that today is
+ *    match day.
+ * ======================================================================== */
+
+:root {
+  --motion-fast: 150ms;
+  --motion-base: 300ms;
+  --motion-slow: 600ms;
+  --ease-out-motion: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out-motion: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* The sticky header's height including its 4px accent border, so things
+     pinned beneath it (the reading progress bar) know where it ends. */
+  --header-height: 68px;
+}
+
+@media (min-width: 80rem) {
+  :root {
+    --header-height: 76px;
+  }
+}
+
+@keyframes draw-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(108%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes settle {
+  from {
+    transform: scale(1.06);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * 1. Entrances: the hero, team headers.
+ *
+ * A broadcast title card. The kit bar draws in green, yellow, gold; the name
+ * rises word by word from behind a mask; the supporting lines follow. The
+ * whole sequence is finished inside a second, plays once per page load, and
+ * runs from the HTML alone.
+ * ------------------------------------------------------------------------ */
+
+.word-mask {
+  display: inline-block;
+  /* clip, not hidden: hidden makes a scroll container, which would capture
+     any scroll-driven timeline inside it. */
+  overflow: clip;
+  vertical-align: top;
+  /* Room for the bottom of the display face, which sits close to the box. */
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+}
+
+.word-mask > span {
+  display: inline-block;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .entrance-bar > * {
+    transform-origin: left center;
+    animation: draw-x 500ms var(--ease-out-motion) both;
+  }
+  .entrance-bar > :nth-child(2) {
+    animation-delay: 120ms;
+  }
+  .entrance-bar > :nth-child(3) {
+    animation-delay: 240ms;
+  }
+
+  .entrance-words .word-mask > span {
+    animation: rise 700ms var(--ease-out-motion) both;
+    animation-delay: calc(180ms + var(--i, 0) * 70ms);
+  }
+
+  .entrance-fade {
+    animation: fade-up 600ms var(--ease-out-motion) both;
+    animation-delay: calc(480ms + var(--i, 0) * 70ms);
+  }
+
+  .entrance-photo {
+    animation: settle 1600ms var(--ease-out-motion) both;
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * 4. Section headings that draw their own rule.
+ *
+ * The grey rule under every section heading draws left to right as it scrolls
+ * in, with a short bar in the team accent leading it: the kit-bar motif from
+ * the hero, repeated at section scale. The accent bar is part of the design
+ * whether or not anything moves.
+ * ------------------------------------------------------------------------ */
+
+.heading-rule {
+  position: relative;
+  view-timeline: --heading block;
+}
+
+.heading-rule::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 4rem;
+  height: 3px;
+  background: var(--color-accent);
+  transform-origin: left center;
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .heading-rule {
+      border-bottom-color: transparent;
+    }
+
+    .heading-rule::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -1px;
+      height: 1px;
+      background: var(--rule-color, var(--color-line));
+      transform-origin: left center;
+      animation: draw-x linear both;
+      animation-timeline: --heading;
+      animation-range: entry 0% entry 100%;
+    }
+
+    .heading-rule::after {
+      animation: draw-x linear both;
+      animation-timeline: --heading;
+      animation-range: entry 0% entry 60%;
+    }
+
+    .heading-rule .heading-label {
+      animation: slide-in-left linear both;
+      animation-timeline: --heading;
+      animation-range: entry 0% entry 70%;
+    }
+  }
+}
+
+.heading-rule-dark {
+  --rule-color: rgb(255 255 255 / 0.2);
+}
+
+/* --------------------------------------------------------------------------
+ * 5. Staggered grids and the league table.
+ *
+ * Cards in a row arrive a beat apart instead of all at once. The stagger is a
+ * shift in each item's scroll range, not a time delay, so a supporter who
+ * scrolls fast is never left waiting for content to catch up.
+ * ------------------------------------------------------------------------ */
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .stagger > * {
+      animation: fade-up linear both;
+      animation-timeline: view();
+      animation-range: entry calc(var(--step, 0) * 10%) entry calc(55% + var(--step, 0) * 10%);
+    }
+    .stagger > :nth-child(4n + 2) {
+      --step: 1;
+    }
+    .stagger > :nth-child(4n + 3) {
+      --step: 2;
+    }
+    .stagger > :nth-child(4n + 4) {
+      --step: 3;
+    }
+
+    .table-reveal > tr {
+      animation: slide-in-left linear both;
+      animation-timeline: --table;
+      animation-range: entry calc(var(--row, 0) * 4%) entry calc(25% + var(--row, 0) * 4%);
+    }
+  }
+}
+
+.table-reveal-scope {
+  view-timeline: --table block;
+}
+
+/* The club's own row: a tint in the team accent that sweeps across once the
+   row has arrived. Without scroll-driven animation the tint is simply there. */
+.row-ours {
+  background-image: linear-gradient(
+    color-mix(in srgb, var(--color-accent) 14%, var(--color-chalk)),
+    color-mix(in srgb, var(--color-accent) 14%, var(--color-chalk))
+  );
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .table-reveal > tr.row-ours {
+      animation:
+        slide-in-left linear both,
+        row-sweep linear both;
+      animation-timeline: --table, --table;
+      animation-range:
+        entry calc(var(--row, 0) * 4%) entry calc(25% + var(--row, 0) * 4%),
+        entry calc(25% + var(--row, 0) * 4%) entry calc(50% + var(--row, 0) * 4%);
+    }
+  }
+}
+
+@keyframes row-sweep {
+  from {
+    background-size: 0% 100%;
+  }
+  to {
+    background-size: 100% 100%;
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * 3. Scoreboard score reveal.
+ *
+ * Each side's goals roll up into place like a stadium scoreboard as the card
+ * arrives, home first, then away, then the outcome in words. The digits are
+ * never counted up from nought: for a moment that would show a scoreline that
+ * never happened.
+ * ------------------------------------------------------------------------ */
+
+.match-card {
+  view-timeline: --match block;
+}
+
+.score-roll {
+  display: inline-block;
+  overflow: clip;
+  vertical-align: bottom;
+}
+
+.score-roll > span {
+  display: inline-block;
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .score-roll > span {
+      animation: rise linear both;
+      animation-timeline: --match;
+      animation-range: entry 25% entry 80%;
+    }
+    .score-roll.is-away > span {
+      animation-range: entry 40% entry 95%;
+    }
+    .match-card .result-word {
+      animation: fade-in linear both;
+      animation-timeline: --match;
+      animation-range: entry 70% entry 100%;
+    }
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * 6. Cards: an accent bar on hover and keyboard focus.
+ *
+ * Echoes the header's accent border. Flat, square, no lift or shadow, which
+ * would fight the editorial look. Triggered by focus as well as the pointer,
+ * so keyboard users get the same feedback.
+ * ------------------------------------------------------------------------ */
+
+.card-bar {
+  position: relative;
+}
+
+.card-bar::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 4px;
+  background: var(--color-accent);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--motion-base) var(--ease-out-motion);
+}
+
+.group:hover .card-bar::after,
+.group:has(:focus-visible) .card-bar::after,
+.group:focus-visible .card-bar::after {
+  transform: scaleX(1);
+}
+
+/* --------------------------------------------------------------------------
+ * 7. Header elevation and reading progress.
+ *
+ * As the page scrolls away from the top the header gains depth and the
+ * wordmark tightens. Its height deliberately stays fixed: a sticky header that
+ * changes height moves the content beneath it while it is being read.
+ *
+ * On articles a bar along the header's lower edge fills as the story is read:
+ * movement that tells the reader how much is left.
+ * ------------------------------------------------------------------------ */
+
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .site-header {
+      animation: header-elevate linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0px 120px;
+    }
+
+    .site-header-mark {
+      transform-origin: left center;
+      animation: header-mark linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0px 120px;
+    }
+  }
+}
+
+@keyframes header-elevate {
+  to {
+    box-shadow: 0 12px 28px -14px rgb(1 30 15 / 0.6);
+  }
+}
+
+@keyframes header-mark {
+  to {
+    transform: scale(0.88);
+  }
+}
+
+.article-scope {
+  timeline-scope: --article-body;
+}
+
+.article-track {
+  view-timeline: --article-body block;
+}
+
+.reading-progress {
+  display: none;
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reading-progress {
+      display: block;
+      position: fixed;
+      left: 0;
+      right: 0;
+      top: calc(var(--header-height) - 4px);
+      z-index: 41;
+      height: 4px;
+      background: var(--color-highlight);
+      transform-origin: left center;
+      animation: draw-x linear both;
+      animation-timeline: --article-body;
+      animation-range: contain 0% contain 100%;
+    }
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * 8. The mobile menu and the photo viewer.
+ *
+ * Native <dialog>s, entering with @starting-style: the menu rises into place
+ * and its team blocks and links follow in a short cascade; the photo viewer
+ * scales up from just under full size. Closing reverses both. The browser's
+ * own focus trapping and Escape handling are untouched.
+ * ------------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: no-preference) {
+  .menu-dialog,
+  .viewer-dialog {
+    opacity: 0;
+    transition:
+      opacity 250ms var(--ease-out-motion),
+      transform 350ms var(--ease-out-motion),
+      overlay 350ms allow-discrete,
+      display 350ms allow-discrete;
+  }
+
+  .menu-dialog {
+    transform: translateY(16px);
+  }
+
+  .viewer-dialog {
+    transform: scale(0.96);
+  }
+
+  .menu-dialog[open],
+  .viewer-dialog[open] {
+    opacity: 1;
+    transform: none;
+  }
+
+  @starting-style {
+    .menu-dialog[open] {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+
+    .viewer-dialog[open] {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+  }
+
+  .viewer-dialog::backdrop {
+    opacity: 0;
+    transition:
+      opacity 300ms var(--ease-out-motion),
+      overlay 300ms allow-discrete,
+      display 300ms allow-discrete;
+  }
+
+  .viewer-dialog[open]::backdrop {
+    opacity: 1;
+  }
+
+  @starting-style {
+    .viewer-dialog[open]::backdrop {
+      opacity: 0;
+    }
+  }
+
+  .menu-dialog[open] .menu-in {
+    animation: fade-up 450ms var(--ease-out-motion) both;
+    animation-delay: calc(90ms + var(--i, 0) * 40ms);
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * 14. Form guide and win-rate ring.
+ *
+ * The last five results pop in oldest to newest, the order they were played,
+ * and the ring fills to the season's win rate. Both are complete and correct
+ * without animation; the motion only adds the order.
+ * ------------------------------------------------------------------------ */
+
+.form-guide {
+  view-timeline: --form block;
+}
+
+.win-ring-value {
+  stroke-dashoffset: var(--ring-offset, 100);
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .form-guide .form-pill {
+      animation: pill-pop linear both;
+      animation-timeline: --form;
+      animation-range: entry calc(20% + var(--i, 0) * 12%) entry calc(50% + var(--i, 0) * 12%);
+    }
+
+    .form-guide .win-ring-value {
+      animation: ring-fill linear both;
+      animation-timeline: --form;
+      animation-range: entry 30% cover 50%;
+    }
+  }
+}
+
+@keyframes pill-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes ring-fill {
+  from {
+    stroke-dashoffset: 100;
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * 16. Sponsor marquee.
+ *
+ * Partner logos glide slowly across. It pauses under the pointer or keyboard
+ * focus so a logo can be read and followed, and under reduced motion it is a
+ * plain wrapped row with the duplicate copy removed.
+ * ------------------------------------------------------------------------ */
+
+.marquee {
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .marquee-track {
+    animation: marquee var(--marquee-duration, 40s) linear infinite;
+  }
+
+  .marquee:hover .marquee-track,
+  .marquee:focus-within .marquee-track {
+    animation-play-state: paused;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee {
+    mask-image: none;
+  }
+
+  .marquee-track {
+    width: auto;
+    flex-wrap: wrap;
+  }
+
+  .marquee-copy {
+    display: none;
+  }
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * 18. Self-drawing success tick.
+ * ------------------------------------------------------------------------ */
+
+.success-tick circle,
+.success-tick path {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .success-tick circle {
+    animation: draw-stroke 500ms var(--ease-out-motion) both;
+  }
+
+  .success-tick path {
+    animation: draw-stroke 400ms var(--ease-out-motion) 350ms both;
+  }
+
+  .success-message {
+    animation: fade-up 500ms var(--ease-out-motion) 200ms both;
+  }
+}
+
+@keyframes draw-stroke {
+  from {
+    stroke-dashoffset: 100;
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * 19. Match day.
+ *
+ * On the day of a fixture its ticket wears a ring in the highlight colour,
+ * which slowly pulses outward. The ring is there under reduced motion too:
+ * it is information, the pulse is emphasis.
+ * ------------------------------------------------------------------------ */
+
+.matchday-ring {
+  outline: 2px solid var(--color-highlight);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .matchday-ring {
+    animation: matchday-pulse 2.4s var(--ease-in-out-motion) infinite;
+  }
+}
+
+@keyframes matchday-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-highlight) 55%, transparent);
+  }
+  60% {
+    box-shadow: 0 0 0 14px color-mix(in srgb, var(--color-highlight) 0%, transparent);
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * 2. Page transitions.
+ *
+ * Navigation crossfades the page body while the header and footer hold
+ * still. Elements that exist on both pages (a player's photograph, a story's
+ * picture) morph from where they were to where they are going, so the
+ * supporter sees one object move rather than two swap. Browsers without the
+ * View Transitions API navigate exactly as before.
+ * ------------------------------------------------------------------------ */
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+/* The header is its own layer, kept above the page so content changing
+   underneath never passes over it. */
+.site-header {
+  view-transition-name: site-header;
+}
+
+::view-transition-group(site-header) {
+  z-index: 2;
+  animation: none;
+}
+
+/* The page body crossfades in place rather than sliding from wherever the
+   previous page was scrolled to: a long page would otherwise sweep past. */
+::view-transition-group(.page) {
+  animation: none;
+}
+
+::view-transition-old(.page) {
+  animation: 140ms var(--ease-out-motion) both vt-fade-out;
+}
+
+::view-transition-new(.page) {
+  animation: 280ms var(--ease-out-motion) 70ms both vt-fade-in;
+}
+
+::view-transition-group(.morph) {
+  animation-duration: 420ms;
+  animation-timing-function: var(--ease-out-motion);
+}
+
+::view-transition-image-pair(.morph) {
+  animation-name: vt-via-blur;
+}
+
+@keyframes vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@keyframes vt-via-blur {
+  30% {
+    filter: blur(3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

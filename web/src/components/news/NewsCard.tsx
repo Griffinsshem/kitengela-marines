@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ViewTransition } from "react";
 
 import { formatDate } from "@/lib/datetime";
 import type { ArticleSummary } from "@/lib/schemas";
@@ -14,6 +15,9 @@ import { cn } from "@/lib/cn";
  *
  * Articles without a picture get no placeholder. They fall back to a
  * typographic treatment, which reads as deliberate rather than broken.
+ *
+ * The picture shares a view-transition name with the article page, so opening
+ * a story morphs its picture into the article's header image.
  */
 export function NewsCard({
   article,
@@ -31,18 +35,24 @@ export function NewsCard({
         {article.featured_image ? (
           <div
             className={cn(
-              "relative overflow-hidden bg-turf",
+              "card-bar relative overflow-hidden bg-turf",
               lead ? "aspect-[16/9]" : "aspect-[4/3]",
             )}
           >
-            <Image
-              src={article.featured_image.url}
-              alt={article.featured_image.alt}
-              fill
-              // Lead spans two columns on tablet and up; the rest are thirds.
-              sizes={lead ? "(min-width: 640px) 66vw, 100vw" : "(min-width: 640px) 33vw, 100vw"}
-              className="object-cover transition duration-500 group-hover:scale-[1.03]"
-            />
+            <ViewTransition
+              name={articleImageTransition(article.slug)}
+              share="morph"
+              default="none"
+            >
+              <Image
+                src={article.featured_image.url}
+                alt={article.featured_image.alt}
+                fill
+                // Lead spans two columns on tablet and up; the rest are thirds.
+                sizes={lead ? "(min-width: 640px) 66vw, 100vw" : "(min-width: 640px) 33vw, 100vw"}
+                className="object-cover transition duration-500 group-hover:scale-[1.03]"
+              />
+            </ViewTransition>
           </div>
         ) : (
           <div aria-hidden="true" className={cn("bg-accent", lead ? "h-2" : "h-1.5")} />
@@ -66,4 +76,9 @@ export function NewsCard({
       </Link>
     </article>
   );
+}
+
+/** Shared by the card and the article page, so the picture can morph. */
+export function articleImageTransition(slug: string): string {
+  return `article-image-${slug}`;
 }

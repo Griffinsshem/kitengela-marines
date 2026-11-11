@@ -15,7 +15,7 @@ export function LatestNews({ result }: { result: ApiResult<ArticleSummary[]> }) 
         label="News"
         title="Latest from the club"
         action={
-          <ButtonLink href="/news" variant="outline">
+          <ButtonLink href="/news" variant="outline" arrow>
             All news
           </ButtonLink>
         }
@@ -28,7 +28,7 @@ export function LatestNews({ result }: { result: ApiResult<ArticleSummary[]> }) 
             Match reports, team news and club announcements will be published here.
           </EmptyState>
         ) : (
-          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="stagger grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
             {lead ? <NewsCard article={lead} variant="lead" /> : null}
             {rest.map((article) => (
               <NewsCard key={article.slug} article={article} />

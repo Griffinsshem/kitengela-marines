@@ -13,7 +13,7 @@ import { cn } from "@/lib/cn";
  * than read a wall of meaningless boxes.
  */
 export function Skeleton({ className }: { className?: string }) {
-  return <span aria-hidden="true" className={cn("block animate-pulse-soft bg-line", className)} />;
+  return <span aria-hidden="true" className={cn("skeleton-shimmer block bg-line", className)} />;
 }
 
 export function SkeletonText({ lines = 3, className }: { lines?: number; className?: string }) {

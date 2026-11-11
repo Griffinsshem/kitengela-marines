@@ -1,19 +1,18 @@
 import type { ReactNode } from "react";
 
-import { Countdown } from "@/components/match/Countdown";
-import { MatchCard } from "@/components/match/MatchCard";
+import { FixtureTickets } from "@/components/match/FixtureTickets";
 import type { ApiResult } from "@/lib/api";
 import type { Fixture } from "@/lib/schemas";
 
 /**
- * The next match, shown inside the hero.
+ * The next matches, shown inside the hero as a stack of matchday tickets.
  *
  * Three states, and the difference between the last two matters: no fixture
  * announced is a fact about the county league's schedule, while a failed
  * request is a fact about our own server. Telling supporters no fixtures exist
  * when the API is down would be false.
  */
-export function NextMatch({ result }: { result: ApiResult<Fixture | null> }) {
+export function NextMatch({ result }: { result: ApiResult<Fixture[]> }) {
   if (!result.ok) {
     return (
       <Panel title="Next match">
@@ -22,7 +21,7 @@ export function NextMatch({ result }: { result: ApiResult<Fixture | null> }) {
     );
   }
 
-  if (result.data === null) {
+  if (result.data.length === 0) {
     return (
       <Panel title="Next match">
         <p className="text-chalk/75">
@@ -32,23 +31,7 @@ export function NextMatch({ result }: { result: ApiResult<Fixture | null> }) {
     );
   }
 
-  return (
-    <div>
-      <p className="mb-3 text-meta font-semibold uppercase tracking-widest text-accent-glow">
-        Next match
-      </p>
-      <MatchCard fixture={result.data} tone="dark" />
-
-      {/* Only where a kick-off time is confirmed. Counting down to a date
-          with no time would be counting to midnight, which is not when
-          anybody plays. */}
-      {result.data.kickoff_at ? (
-        <div className="mt-3 border border-chalk/25 bg-pitch/85 px-6 py-4 backdrop-blur-sm">
-          <Countdown kickoffAt={result.data.kickoff_at} />
-        </div>
-      ) : null}
-    </div>
-  );
+  return <FixtureTickets fixtures={result.data} />;
 }
 
 function Panel({ title, children }: { title: string; children: ReactNode }) {

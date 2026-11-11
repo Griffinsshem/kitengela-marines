@@ -36,7 +36,7 @@ export function SquadGrid({ result }: { result: ApiResult<{ squad: Squad; total:
             >
               {label}
             </h3>
-            <ul className="mt-6 grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
+            <ul className="stagger mt-6 grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
               {players.map((player) => (
                 <li key={player.id}>
                   <PlayerCard player={player} />

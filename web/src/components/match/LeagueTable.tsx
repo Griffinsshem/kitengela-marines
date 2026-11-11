@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 import { cn } from "@/lib/cn";
 import type { Standing } from "@/lib/schemas";
 
@@ -12,10 +14,17 @@ import type { Standing } from "@/lib/schemas";
  * On a phone the less important columns are hidden rather than squeezed:
  * position, club, played, goal difference and points are what a supporter
  * checks on the way home from a match.
+ *
+ * Rows slide in top to bottom as the table scrolls into view, and the club's
+ * own row is then swept with a tint in the team accent: the table answers
+ * "where are we?" before it is read. Without motion the tint is simply there.
  */
 export function LeagueTable({ rows }: { rows: Standing[] }) {
   return (
-    <div className="overflow-x-auto">
+    // The scroll wrapper names the timeline the rows animate on. The rows
+    // cannot use view() directly: the wrapper is itself a scroll container,
+    // and a timeline measured against it would never move.
+    <div className="table-reveal-scope overflow-x-auto">
       <table className="w-full min-w-[32rem] border-collapse text-left">
         <caption className="sr-only">League standings</caption>
         <thead>
@@ -52,13 +61,14 @@ export function LeagueTable({ rows }: { rows: Standing[] }) {
             </th>
           </tr>
         </thead>
-        <tbody>
-          {rows.map((row) => (
+        <tbody className="table-reveal">
+          {rows.map((row, index) => (
             <tr
               key={`${row.position}-${row.club.slug}`}
+              style={{ "--row": Math.min(index, 15) } as CSSProperties}
               className={cn(
                 "border-b border-line tabular-nums",
-                row.is_our_club && "bg-turf font-semibold",
+                row.is_our_club && "row-ours font-semibold",
               )}
             >
               <td className="py-3 pr-3">

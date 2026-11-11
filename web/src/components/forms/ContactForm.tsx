@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { CONTROL_CLASSES, Field } from "@/components/admin/Field";
 import { Honeypot } from "@/components/forms/Honeypot";
+import { SuccessTick } from "@/components/forms/SuccessTick";
 import { useServerRenderedAt } from "@/lib/formTiming";
 import { API_URL } from "@/lib/session";
 
@@ -73,10 +74,9 @@ export function ContactForm() {
 
   if (sent) {
     return (
-      <div role="status" className="border border-accent-ink bg-chalk px-6 py-8">
-        <p className="font-display text-xl font-extrabold uppercase">Message sent</p>
-        <p className="mt-3 text-muted">Thank you. Somebody from the club will get back to you.</p>
-      </div>
+      <SuccessTick title="Message sent">
+        Thank you. Somebody from the club will get back to you.
+      </SuccessTick>
     );
   }
 

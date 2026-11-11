@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { type ReactNode, ViewTransition } from "react";
 
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
@@ -10,7 +10,14 @@ const SKIP_LINK_CLASSES = [
   "focus:font-semibold focus:text-on-highlight",
 ].join(" ");
 
-/** The public website: club navigation, footer and the page landmarks. */
+/**
+ * The public website: club navigation, footer and the page landmarks.
+ *
+ * The page body sits in a view transition, so moving between pages crossfades
+ * it while the header and footer hold still. Next.js runs every navigation as
+ * a React transition, which is what lets this animate with no client code;
+ * browsers without the View Transitions API simply navigate as before.
+ */
 export default function SiteLayout({ children }: { children: ReactNode }) {
   return (
     <>
@@ -20,7 +27,9 @@ export default function SiteLayout({ children }: { children: ReactNode }) {
       </a>
       <SiteHeader />
       <main id="content" tabIndex={-1} className="flex-1 focus:outline-none">
-        {children}
+        <ViewTransition default="page">
+          <div>{children}</div>
+        </ViewTransition>
       </main>
       <SiteFooter />
     </>

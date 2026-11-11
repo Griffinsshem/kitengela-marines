@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { CONTROL_CLASSES, Field } from "@/components/admin/Field";
 import { Honeypot } from "@/components/forms/Honeypot";
+import { SuccessTick } from "@/components/forms/SuccessTick";
 import { useServerRenderedAt } from "@/lib/formTiming";
 import { API_URL } from "@/lib/session";
 
@@ -78,12 +79,9 @@ export function PartnershipForm() {
 
   if (sent) {
     return (
-      <div role="status" className="border border-accent-ink bg-chalk px-6 py-8">
-        <p className="font-display text-xl font-extrabold uppercase">Enquiry sent</p>
-        <p className="mt-3 text-muted">
-          Thank you for your interest in supporting the club. Somebody will be in touch.
-        </p>
-      </div>
+      <SuccessTick title="Enquiry sent">
+        Thank you for your interest in supporting the club. Somebody will be in touch.
+      </SuccessTick>
     );
   }
 

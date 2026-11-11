@@ -248,6 +248,25 @@ export function getResults(options: { team?: string; page?: number } = {}) {
   return matchList("results", options);
 }
 
+/**
+ * The next few fixtures, for the homepage's ticket stack. Three is what fits
+ * the stack; more would be a fixture list, which has its own page.
+ */
+export async function getUpcomingFixtures(limit = 3): Promise<ApiResult<Fixture[]>> {
+  const result = await matchList("fixtures", { perPage: limit });
+  return result.ok ? { ok: true, data: result.data.items } : result;
+}
+
+/**
+ * One team's results, enough of them to cover a season, for its form guide
+ * and season record. One request at the API's page-size cap, rather than
+ * paging, because a county-league season is well under a hundred matches.
+ */
+export async function getTeamSeasonResults(teamSlug: string): Promise<ApiResult<Fixture[]>> {
+  const result = await matchList("results", { team: teamSlug, perPage: 100 });
+  return result.ok ? { ok: true, data: result.data.items } : result;
+}
+
 export async function getMatch(slug: string): Promise<ApiResult<MatchDetail>> {
   const result = await request(`/matches/${slug}`, matchDetailResponseSchema, 60);
   return result.ok ? { ok: true, data: result.data.data } : result;

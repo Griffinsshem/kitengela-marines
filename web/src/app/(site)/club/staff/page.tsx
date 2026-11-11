@@ -51,7 +51,7 @@ export default async function StaffPage() {
             Coaching and technical staff will be listed here.
           </EmptyState>
         ) : (
-          <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="stagger grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {sorted.map((member) => (
               <li key={member.id}>
                 <StaffProfile member={member} />

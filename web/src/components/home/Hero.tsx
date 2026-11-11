@@ -1,7 +1,8 @@
 import Image from "next/image";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 import { ButtonLink } from "@/components/ui/Button";
+import { RisingWords } from "@/components/ui/RisingWords";
 import { cn } from "@/lib/cn";
 import type { Club, MediaAsset } from "@/lib/schemas";
 
@@ -15,6 +16,12 @@ import type { Club, MediaAsset } from "@/lib/schemas";
  *
  * When `image` is supplied it fills the band behind the type, with a gradient
  * that keeps the headline legible over any photograph.
+ *
+ * It enters like a broadcast title card: the kit bar draws in, the name rises
+ * word by word, the supporting lines and the next-match panel follow, and a
+ * photograph settles from a slight zoom. All of it is CSS that runs as the
+ * HTML paints, finishes inside a second, and is absent for anyone who has
+ * asked their system for less motion.
  */
 export function Hero({
   club,
@@ -39,7 +46,7 @@ export function Hero({
             fill
             priority
             sizes="100vw"
-            className="-z-10 object-cover"
+            className="entrance-photo -z-10 object-cover"
           />
           <div
             aria-hidden="true"
@@ -56,19 +63,32 @@ export function Hero({
         )}>
         <div>
           {/* The three kit colours, in the order they appear on the shirts. */}
-          <div aria-hidden="true" className="flex h-1.5 w-40 overflow-hidden">
+          <div aria-hidden="true" className="entrance-bar flex h-1.5 w-40 overflow-hidden">
             <span className="flex-1 bg-men-green" />
             <span className="flex-1 bg-men-yellow" />
             <span className="flex-1 bg-men-gold" />
           </div>
 
-          <h1 className="mt-6 font-display text-display font-black uppercase">{name}</h1>
+          <h1 className="mt-6 font-display text-display font-black uppercase">
+            <RisingWords text={name} />
+          </h1>
 
-          {place ? <p className="mt-4 text-lg font-semibold text-accent-glow">{place}</p> : null}
-          {summary ? <p className="mt-4 max-w-xl text-lg text-chalk/85">{summary}</p> : null}
+          {place ? (
+            <p
+              className="entrance-fade mt-4 text-lg font-semibold text-accent-glow"
+              style={step(0)}
+            >
+              {place}
+            </p>
+          ) : null}
+          {summary ? (
+            <p className="entrance-fade mt-4 max-w-xl text-lg text-chalk/85" style={step(1)}>
+              {summary}
+            </p>
+          ) : null}
 
-          <div className="mt-8 flex flex-wrap gap-3">
-            <ButtonLink href="/fixtures" variant="highlight">
+          <div className="entrance-fade mt-8 flex flex-wrap gap-3" style={step(2)}>
+            <ButtonLink href="/fixtures" variant="highlight" arrow>
               Fixtures and results
             </ButtonLink>
             <ButtonLink href="/club" variant="outline">
@@ -77,8 +97,17 @@ export function Hero({
           </div>
         </div>
 
-        {children ? <div className="lg:pb-2">{children}</div> : null}
+        {children ? (
+          <div className="entrance-fade lg:pb-2" style={step(3)}>
+            {children}
+          </div>
+        ) : null}
       </div>
     </section>
   );
+}
+
+/** Position in the entrance sequence, read by `.entrance-fade` in globals.css. */
+function step(index: number): CSSProperties {
+  return { "--i": index } as CSSProperties;
 }

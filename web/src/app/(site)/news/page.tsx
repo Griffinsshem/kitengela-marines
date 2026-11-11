@@ -57,7 +57,7 @@ export default async function NewsPage({ searchParams }: Search) {
           </EmptyState>
         ) : (
           <>
-            <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="stagger grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
               {isFirstPage ? (
                 <>
                   {lead ? <NewsCard article={lead} variant="lead" /> : null}

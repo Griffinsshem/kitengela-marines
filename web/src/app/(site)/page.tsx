@@ -13,10 +13,10 @@ import {
   getLatestArticles,
   getLatestGalleries,
   getLatestResult,
-  getNextFixture,
   getSponsors,
   getStandings,
   getTeams,
+  getUpcomingFixtures,
 } from "@/lib/api";
 
 export const metadata: Metadata = {
@@ -28,11 +28,11 @@ export const metadata: Metadata = {
 export default async function HomePage() {
   // Requested together rather than in sequence: eight calls one after another
   // would make the page wait for the slowest chain instead of the slowest call.
-  const [club, teams, nextFixture, latestResult, articles, standings, galleries, sponsors] =
+  const [club, teams, upcoming, latestResult, articles, standings, galleries, sponsors] =
     await Promise.all([
       getClub(),
       getTeams(),
-      getNextFixture(),
+      getUpcomingFixtures(3),
       getLatestResult(),
       getLatestArticles(3),
       getStandings(),
@@ -46,7 +46,7 @@ export default async function HomePage() {
         club={club.ok ? club.data : null}
         image={club.ok ? (club.data?.hero_image ?? null) : null}
       >
-        <NextMatch result={nextFixture} />
+        <NextMatch result={upcoming} />
       </Hero>
       <LatestResult result={latestResult} />
       <TeamsSpotlight result={teams} />
