@@ -12,7 +12,7 @@ export function LatestResult({ result }: { result: ApiResult<Fixture | null> }) 
         label="Match centre"
         title="Latest result"
         action={
-          <ButtonLink href="/results" variant="outline">
+          <ButtonLink href="/results" variant="outline" arrow>
             All results
           </ButtonLink>
         }

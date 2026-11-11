@@ -24,7 +24,7 @@ export function MediaStrip({ result }: { result: ApiResult<GallerySummary[]> }) 
         label="Media"
         title="From the sidelines"
         action={
-          <ButtonLink href="/media/photos" variant="outline">
+          <ButtonLink href="/media/photos" variant="outline" arrow>
             All galleries
           </ButtonLink>
         }
@@ -37,7 +37,7 @@ export function MediaStrip({ result }: { result: ApiResult<GallerySummary[]> }) 
             Photographs from match days, training and club events will be collected here.
           </EmptyState>
         ) : (
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <ul className="stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {galleries.map((gallery, index) => (
               <li
                 key={gallery.slug}
@@ -58,7 +58,7 @@ function GalleryTile({ gallery, large }: { gallery: GallerySummary; large: boole
 
   return (
     <Link href={`/media/photos/${gallery.slug}`} className="group block h-full">
-      <div className="relative aspect-[4/3] overflow-hidden bg-line">
+      <div className="card-bar relative aspect-[4/3] overflow-hidden bg-line">
         {gallery.cover ? (
           <Image
             src={gallery.cover.url}

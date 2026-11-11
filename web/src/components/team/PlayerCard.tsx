@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ViewTransition } from "react";
 
 import type { Player } from "@/lib/schemas";
 
@@ -15,6 +16,10 @@ const STATUS_LABEL: Record<string, string> = {
  * set. Players without a photograph get their squad number at display size
  * instead of a grey silhouette, which looks deliberate and avoids implying the
  * club failed to supply something.
+ *
+ * The photograph carries a view-transition name shared with the profile page,
+ * so following the card morphs the picture into the profile's header instead
+ * of swapping one image for another.
  */
 export function PlayerCard({ player }: { player: Player }) {
   const status = STATUS_LABEL[player.status];
@@ -22,15 +27,17 @@ export function PlayerCard({ player }: { player: Player }) {
   return (
     <article className="group">
       <Link href={`/teams/${player.team.slug}/players/${player.slug}`} className="block">
-        <div className="relative aspect-[3/4] overflow-hidden bg-pitch">
+        <div className="card-bar relative aspect-[3/4] overflow-hidden bg-pitch">
           {player.photo_url ? (
-            <Image
-              src={player.photo_url}
-              alt={player.display_name}
-              fill
-              sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-              className="object-cover object-top transition duration-500 group-hover:scale-[1.03]"
-            />
+            <ViewTransition name={playerPhotoTransition(player.slug)} share="morph" default="none">
+              <Image
+                src={player.photo_url}
+                alt={player.display_name}
+                fill
+                sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+                className="object-cover object-top transition duration-500 group-hover:scale-[1.03]"
+              />
+            </ViewTransition>
           ) : (
             <p className="flex h-full items-center justify-center font-display text-score font-black text-accent-glow">
               {player.squad_number ?? ""}
@@ -56,4 +63,9 @@ export function PlayerCard({ player }: { player: Player }) {
       </Link>
     </article>
   );
+}
+
+/** Shared by the card and the profile page, so the photograph can morph. */
+export function playerPhotoTransition(slug: string): string {
+  return `player-photo-${slug}`;
 }

@@ -14,6 +14,11 @@ const RESULT_WORD: Record<string, string> = { W: "Won", D: "Drew", L: "Lost" };
  * and the API already reports the score both ways so no arithmetic happens
  * here. The outcome is spelled out in words as well as the letter, so nothing
  * depends on seeing a colour.
+ *
+ * A played match's goals roll up into place like a scoreboard as the card
+ * scrolls in, home side first, then away, then the outcome in words (see
+ * `.match-card` in globals.css). The final digits are what is in the markup;
+ * the motion only decides when they appear.
  */
 export function MatchCard({
   fixture,
@@ -33,7 +38,7 @@ export function MatchCard({
   return (
     <article
       className={cn(
-        "border",
+        "match-card border",
         dark ? "border-chalk/20 bg-chalk/5 text-chalk" : "border-line bg-chalk text-pitch",
       )}
     >
@@ -59,7 +64,7 @@ export function MatchCard({
             <p className="font-display text-xl font-extrabold uppercase leading-tight">{home}</p>
             {fixture.is_completed ? (
               <p className="font-display text-3xl font-black tabular-nums leading-none">
-                {fixture.home_score}
+                <Score value={fixture.home_score} />
               </p>
             ) : null}
           </div>
@@ -79,7 +84,7 @@ export function MatchCard({
             <p className="font-display text-xl font-extrabold uppercase leading-tight">{away}</p>
             {fixture.is_completed ? (
               <p className="font-display text-3xl font-black tabular-nums leading-none">
-                {fixture.away_score}
+                <Score value={fixture.away_score} away />
               </p>
             ) : null}
           </div>
@@ -89,9 +94,9 @@ export function MatchCard({
           <p className="font-display text-3xl font-extrabold uppercase leading-none">{home}</p>
           {fixture.is_completed ? (
             <p className="whitespace-nowrap font-display text-score font-black tabular-nums leading-none">
-              {fixture.home_score}
+              <Score value={fixture.home_score} />
               <span className={dark ? "px-2 text-accent-glow" : "px-2 text-accent-ink"}>–</span>
-              {fixture.away_score}
+              <Score value={fixture.away_score} away />
             </p>
           ) : (
             <p className="text-meta font-semibold uppercase tracking-widest">v</p>
@@ -137,7 +142,7 @@ export function MatchCard({
         </dl>
 
         {fixture.is_completed && fixture.result ? (
-          <p className="mt-4 text-meta font-semibold">
+          <p className="result-word mt-4 text-meta font-semibold">
             {RESULT_WORD[fixture.result] ?? fixture.result}{" "}
             <Link
               href={`/matches/${fixture.slug}`}
@@ -152,5 +157,14 @@ export function MatchCard({
         ) : null}
       </div>
     </article>
+  );
+}
+
+/** One side's goals, masked so the digits can roll up into place. */
+function Score({ value, away = false }: { value: number | null; away?: boolean }) {
+  return (
+    <span className={cn("score-roll", away && "is-away")}>
+      <span>{value}</span>
+    </span>
   );
 }

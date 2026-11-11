@@ -3,7 +3,7 @@
 import { List, X } from "@phosphor-icons/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { type CSSProperties, useEffect, useRef } from "react";
 
 import {
   type NavItem,
@@ -27,6 +27,10 @@ import { ClubMark } from "./ClubMark";
  *
  * The teams open the menu as two colour blocks in their own kit colours, since
  * choosing a team is the most common reason a supporter opens it.
+ *
+ * It rises into place as it opens, and its team blocks and links follow in a
+ * short cascade (`.menu-dialog` and `.menu-in` in globals.css), using
+ * @starting-style so the native dialog keeps all of its own behaviour.
  */
 export function MobileNav({ items, teams }: { items: NavItem[]; teams: Team[] }) {
   const pathname = usePathname();
@@ -56,7 +60,7 @@ export function MobileNav({ items, teams }: { items: NavItem[]; teams: Team[] })
       <dialog
         ref={dialogRef}
         aria-label="Site menu"
-        className="m-0 h-dvh max-h-none w-full max-w-none bg-pitch p-0 text-chalk backdrop:bg-pitch"
+        className="menu-dialog m-0 h-dvh max-h-none w-full max-w-none bg-pitch p-0 text-chalk backdrop:bg-pitch"
       >
         <div className="flex h-full flex-col overflow-y-auto">
           <div className="flex h-16 shrink-0 items-center justify-between border-b-4 border-accent px-5">
@@ -73,8 +77,13 @@ export function MobileNav({ items, teams }: { items: NavItem[]; teams: Team[] })
 
           {teams.length > 0 && (
             <ul className="grid grid-cols-2 gap-px bg-pitch">
-              {teams.map((team) => (
-                <li key={team.id} data-team={toTeamAccentKey(team.accent_key)}>
+              {teams.map((team, index) => (
+                <li
+                  key={team.id}
+                  data-team={toTeamAccentKey(team.accent_key)}
+                  className="menu-in"
+                  style={cascade(index)}
+                >
                   <Link
                     href={teamHref(team)}
                     aria-current={isActivePath(pathname, teamHref(team)) ? "page" : undefined}
@@ -89,12 +98,16 @@ export function MobileNav({ items, teams }: { items: NavItem[]; teams: Team[] })
 
           <nav aria-label="Main" className="flex-1 px-5 pb-8">
             <ul>
-              <li>
+              <li className="menu-in" style={cascade(teams.length)}>
                 <MobileLink href="/" label="Home" current={pathname === "/"} />
               </li>
-              {listItems.map((item) =>
+              {listItems.map((item, index) =>
                 isNavGroup(item) ? (
-                  <li key={item.label} className="border-t border-chalk/15 pt-5">
+                  <li
+                    key={item.label}
+                    className="menu-in border-t border-chalk/15 pt-5"
+                    style={cascade(teams.length + 1 + index)}
+                  >
                     <p className="font-display text-lg font-extrabold uppercase text-accent-glow">
                       {item.label}
                     </p>
@@ -111,7 +124,11 @@ export function MobileNav({ items, teams }: { items: NavItem[]; teams: Team[] })
                     </ul>
                   </li>
                 ) : (
-                  <li key={item.label} className="border-t border-chalk/15">
+                  <li
+                    key={item.label}
+                    className="menu-in border-t border-chalk/15"
+                    style={cascade(teams.length + 1 + index)}
+                  >
                     <MobileLink
                       href={item.href}
                       label={item.label}
@@ -135,6 +152,12 @@ export function MobileNav({ items, teams }: { items: NavItem[]; teams: Team[] })
       </dialog>
     </>
   );
+}
+
+/** Position in the opening cascade, read by `.menu-in`. Capped so a long menu
+ *  is never still arriving after the supporter has started reading it. */
+function cascade(index: number): CSSProperties {
+  return { "--i": Math.min(index, 8) } as CSSProperties;
 }
 
 function MobileLink({ href, label, current }: { href: string; label: string; current: boolean }) {

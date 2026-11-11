@@ -33,11 +33,11 @@ export default async function PhotosPage({ searchParams }: Search) {
           </EmptyState>
         ) : (
           <>
-            <ul className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="stagger grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
               {result.data.items.map((gallery) => (
                 <li key={gallery.slug}>
                   <Link href={`/media/photos/${gallery.slug}`} className="group block">
-                    <div className="relative aspect-[4/3] overflow-hidden bg-turf">
+                    <div className="card-bar relative aspect-[4/3] overflow-hidden bg-turf">
                       {gallery.cover ? (
                         <Image
                           src={gallery.cover.url}

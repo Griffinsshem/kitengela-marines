@@ -28,6 +28,13 @@ export function Section({
   );
 }
 
+/**
+ * A section's label and title over a rule.
+ *
+ * The rule draws itself left to right as the heading scrolls into view, led
+ * by a short bar in the team accent (`.heading-rule` in globals.css). One
+ * component, so every section on the site enters the same way.
+ */
 export function SectionHeading({
   label,
   title,
@@ -38,9 +45,9 @@ export function SectionHeading({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-4">
+    <div className="heading-rule flex flex-wrap items-end justify-between gap-4 border-b border-line pb-4">
       <div>
-        <p className="text-meta font-semibold text-accent-ink">{label}</p>
+        <p className="heading-label text-meta font-semibold text-accent-ink">{label}</p>
         <h2 className="mt-1 font-display text-headline font-extrabold uppercase">{title}</h2>
       </div>
       {action}

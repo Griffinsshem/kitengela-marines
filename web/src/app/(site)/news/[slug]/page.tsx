@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ViewTransition } from "react";
 
+import { articleImageTransition } from "@/components/news/NewsCard";
 import { UnavailableState } from "@/components/ui/EmptyState";
 import { Section } from "@/components/ui/Section";
 import { toTeamAccentKey } from "@/config/teams";
@@ -52,7 +54,11 @@ export default async function ArticlePage({ params }: Params) {
   const accent = article.team ? toTeamAccentKey(article.team.accent_key) : "club";
 
   return (
-    <article data-team={accent}>
+    <article data-team={accent} className="article-scope">
+      {/* Fills along the header's lower edge as the story is read. Decorative:
+          the scroll position already tells assistive technology where it is. */}
+      <div aria-hidden="true" className="reading-progress" />
+
       <header className="bg-pitch text-chalk">
         <div className="mx-auto max-w-3xl px-5 py-12 sm:px-8 sm:py-16">
           <p className="text-meta font-semibold uppercase tracking-widest text-accent-glow">
@@ -73,19 +79,25 @@ export default async function ArticlePage({ params }: Params) {
 
       {article.featured_image ? (
         <div className="relative mx-auto aspect-[16/9] max-w-5xl">
-          <Image
-            src={article.featured_image.url}
-            alt={article.featured_image.alt}
-            fill
-            priority
-            sizes="(min-width: 1024px) 64rem, 100vw"
-            className="object-cover"
-          />
+          <ViewTransition
+            name={articleImageTransition(article.slug)}
+            share="morph"
+            default="none"
+          >
+            <Image
+              src={article.featured_image.url}
+              alt={article.featured_image.alt}
+              fill
+              priority
+              sizes="(min-width: 1024px) 64rem, 100vw"
+              className="object-cover"
+            />
+          </ViewTransition>
         </div>
       ) : null}
 
       <Section>
-        <div className="mx-auto max-w-3xl">
+        <div className="article-track mx-auto max-w-3xl">
           {/*
             The API sanitises this HTML on save and again on read, against a
             small allow-list with no scripts, no event handlers and no

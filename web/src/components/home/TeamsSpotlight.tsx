@@ -30,7 +30,7 @@ export function TeamsSpotlight({ result }: { result: ApiResult<Team[]> }) {
             Squad information will appear here as the club publishes it.
           </EmptyState>
         ) : (
-          <ul className="grid gap-6 md:grid-cols-2">
+          <ul className="stagger grid gap-6 md:grid-cols-2">
             {result.data.map((team) => (
               <li key={team.id} data-team={toTeamAccentKey(team.accent_key)}>
                 <Link

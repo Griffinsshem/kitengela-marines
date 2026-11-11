@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ViewTransition } from "react";
 
+import { playerPhotoTransition } from "@/components/team/PlayerCard";
 import { UnavailableState } from "@/components/ui/EmptyState";
 import { Section } from "@/components/ui/Section";
 import { toTeamAccentKey } from "@/config/teams";
@@ -58,14 +60,20 @@ export default async function PlayerPage({ params }: Params) {
         <div className="mx-auto grid max-w-7xl gap-8 px-5 py-12 sm:px-8 sm:py-16 lg:grid-cols-[2fr_3fr] lg:items-end">
           <div className="relative aspect-[3/4] max-w-sm overflow-hidden bg-chalk/5">
             {player.photo_url ? (
-              <Image
-                src={player.photo_url}
-                alt={player.display_name}
-                fill
-                priority
-                sizes="(min-width: 1024px) 33vw, 100vw"
-                className="object-cover object-top"
-              />
+              <ViewTransition
+                name={playerPhotoTransition(player.slug)}
+                share="morph"
+                default="none"
+              >
+                <Image
+                  src={player.photo_url}
+                  alt={player.display_name}
+                  fill
+                  priority
+                  sizes="(min-width: 1024px) 33vw, 100vw"
+                  className="object-cover object-top"
+                />
+              </ViewTransition>
             ) : (
               <p className="flex h-full items-center justify-center font-display text-score font-black text-accent-glow">
                 {player.squad_number ?? ""}

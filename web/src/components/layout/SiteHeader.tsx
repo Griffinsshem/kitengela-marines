@@ -17,6 +17,10 @@ import { MobileNav } from "./MobileNav";
  * The full desktop bar starts at 1280px. Seven items, the wordmark and the
  * Support button do not fit legibly at 1024px, and squeezing them would be
  * exactly the cramped desktop-menu-on-a-small-screen the brief rules out.
+ *
+ * Once the page leaves the top, the header gains depth and the wordmark
+ * tightens, driven by scroll position in CSS (`.site-header`). The height
+ * itself never changes, so nothing beneath it moves while it is being read.
  */
 export async function SiteHeader() {
   const result = await getTeams();
@@ -24,9 +28,9 @@ export async function SiteHeader() {
   const items = buildNavigation(teams);
 
   return (
-    <header className="sticky top-0 z-40 border-b-4 border-accent bg-pitch text-chalk">
+    <header className="site-header sticky top-0 z-40 border-b-4 border-accent bg-pitch text-chalk">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-6 px-5 sm:px-8 xl:h-18">
-        <ClubMark className="text-2xl xl:text-3xl" />
+        <ClubMark className="site-header-mark text-2xl xl:text-3xl" />
         <DesktopNav items={items} />
         <div className="flex items-center gap-2">
           <Link

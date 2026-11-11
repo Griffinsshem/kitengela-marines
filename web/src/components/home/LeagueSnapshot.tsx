@@ -1,5 +1,8 @@
+import type { ReactNode } from "react";
+
 import { ButtonLink } from "@/components/ui/Button";
 import { Section } from "@/components/ui/Section";
+import { StatNumber } from "@/components/ui/StatNumber";
 import type { ApiResult } from "@/lib/api";
 import type { SeasonRef, Standing } from "@/lib/schemas";
 
@@ -12,6 +15,9 @@ type Snapshot = { rows: Standing[]; season: SeasonRef | null };
  * feed, so an empty table is the normal state between seasons rather than a
  * fault. Goal difference carries an explicit sign; position is a number, not a
  * coloured badge.
+ *
+ * The season totals roll up to their values as the panel scrolls in. Position
+ * does not: a club briefly shown in position nought is not a club anywhere.
  */
 export function LeagueSnapshot({ result }: { result: ApiResult<Snapshot> }) {
   const ourRow = result.ok ? result.data.rows.find((row) => row.is_our_club) : undefined;
@@ -19,16 +25,16 @@ export function LeagueSnapshot({ result }: { result: ApiResult<Snapshot> }) {
 
   return (
     <Section tone="pitch">
-      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-chalk/20 pb-4">
+      <div className="heading-rule heading-rule-dark flex flex-wrap items-end justify-between gap-4 border-b border-chalk/20 pb-4">
         <div>
-          <p className="text-meta font-semibold text-accent-glow">
+          <p className="heading-label text-meta font-semibold text-accent-glow">
             {season ? season.competition.name : "League"}
           </p>
           <h2 className="mt-1 font-display text-headline font-extrabold uppercase">
             League position
           </h2>
         </div>
-        <ButtonLink href="/league-table" variant="outline">
+        <ButtonLink href="/league-table" variant="outline" arrow>
           Full table
         </ButtonLink>
       </div>
@@ -39,17 +45,15 @@ export function LeagueSnapshot({ result }: { result: ApiResult<Snapshot> }) {
         ) : ourRow ? (
           <dl className="grid grid-cols-2 gap-px border border-chalk/20 bg-chalk/20 sm:grid-cols-4 lg:grid-cols-7">
             <Stat label="Position" value={ourRow.position} emphasis />
-            <Stat label="Played" value={ourRow.played} />
-            <Stat label="Won" value={ourRow.won} />
-            <Stat label="Drawn" value={ourRow.drawn} />
-            <Stat label="Lost" value={ourRow.lost} />
+            <Stat label="Played" value={<StatNumber value={ourRow.played} />} />
+            <Stat label="Won" value={<StatNumber value={ourRow.won} />} />
+            <Stat label="Drawn" value={<StatNumber value={ourRow.drawn} />} />
+            <Stat label="Lost" value={<StatNumber value={ourRow.lost} />} />
             <Stat
               label="Goal difference"
-              value={
-                ourRow.goal_difference > 0 ? `+${ourRow.goal_difference}` : ourRow.goal_difference
-              }
+              value={<StatNumber value={ourRow.goal_difference} signed />}
             />
-            <Stat label="Points" value={ourRow.points} emphasis />
+            <Stat label="Points" value={<StatNumber value={ourRow.points} />} emphasis />
           </dl>
         ) : (
           <div className="border border-chalk/20 bg-chalk/5 px-6 py-10 text-center sm:py-14">
@@ -73,7 +77,7 @@ function Stat({
   emphasis = false,
 }: {
   label: string;
-  value: number | string;
+  value: ReactNode;
   emphasis?: boolean;
 }) {
   return (

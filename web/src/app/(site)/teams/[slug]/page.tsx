@@ -6,11 +6,20 @@ import { NewsCard } from "@/components/news/NewsCard";
 import { SquadGrid } from "@/components/team/SquadGrid";
 import { StaffCard } from "@/components/team/StaffCard";
 import { TeamHero } from "@/components/team/TeamHero";
+import { TeamSeason } from "@/components/team/TeamSeason";
 import { TeamSwitcher } from "@/components/team/TeamSwitcher";
 import { EmptyState, UnavailableState } from "@/components/ui/EmptyState";
 import { Section, SectionHeading } from "@/components/ui/Section";
 import { toTeamAccentKey } from "@/config/teams";
-import { getSquad, getStaff, getTeam, getTeamArticles, getTeams } from "@/lib/api";
+import {
+  getSquad,
+  getStaff,
+  getTeam,
+  getTeamArticles,
+  getTeamSeasonResults,
+  getTeams,
+} from "@/lib/api";
+import { summariseSeason } from "@/lib/season";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -56,12 +65,17 @@ export default async function TeamPage({ params }: Params) {
     );
   }
 
-  const [teams, squad, staff, articles] = await Promise.all([
+  const [teams, squad, staff, articles, results] = await Promise.all([
     getTeams(),
     getSquad(slug),
     getStaff(slug),
     getTeamArticles(slug),
+    getTeamSeasonResults(slug),
   ]);
+
+  // Left out entirely before a ball is kicked, or if results could not be
+  // loaded: the match centre above already says which of those it is.
+  const season = results.ok ? summariseSeason(results.data) : null;
 
   const accent = toTeamAccentKey(team.data.accent_key);
 
@@ -101,6 +115,8 @@ export default async function TeamPage({ params }: Params) {
         </div>
       </Section>
 
+      {season ? <TeamSeason summary={season} /> : null}
+
       <Section>
         <SectionHeading label="Squad" title={`${team.data.short_name} squad`} />
         <div className="mt-8">
@@ -118,7 +134,7 @@ export default async function TeamPage({ params }: Params) {
               Coaching and technical staff will be listed here.
             </EmptyState>
           ) : (
-            <ul className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <ul className="stagger grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {staff.data.map((member) => (
                 <li key={member.id}>
                   <StaffCard member={member} />
@@ -132,7 +148,7 @@ export default async function TeamPage({ params }: Params) {
       {articles.ok && articles.data.length > 0 ? (
         <Section>
           <SectionHeading label="News" title={`${team.data.short_name} news`} />
-          <div className="mt-8 grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="stagger mt-8 grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
             {articles.data.map((article) => (
               <NewsCard key={article.slug} article={article} />
             ))}
