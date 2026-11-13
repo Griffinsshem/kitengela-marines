@@ -5,8 +5,11 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/admin/AuthProvider";
+import { DeleteRecord } from "@/components/admin/DeleteRecord";
 import { BLANK_FIXTURE, FixtureForm, type FixtureDraft } from "@/components/admin/FixtureForm";
 import { ResultForm } from "@/components/admin/ResultForm";
+import { formatDayMonth, nairobiDayKey } from "@/lib/datetime";
+import { describeFixtureDeletion } from "@/lib/deletion";
 
 type FixturePayload = {
   id: string;
@@ -152,6 +155,25 @@ export default function EditFixturePage() {
           />
         </div>
       </section>
+
+      <DeleteRecord
+        apiPath={`/admin/fixtures/${fixture.id}`}
+        name={fixtureName(fixture)}
+        noun="match"
+        describe={describeFixtureDeletion}
+        alternative="If the match was called off rather than entered by mistake, set its status to postponed or cancelled instead, so supporters can see what happened."
+        returnTo="/admin/fixtures"
+      />
     </div>
   );
+}
+
+/** "Marines v Isinya United, 3 Oct": the date tells two duplicates apart. */
+function fixtureName(fixture: FixturePayload): string {
+  const day = fixture.kickoff_at
+    ? nairobiDayKey(new Date(fixture.kickoff_at))
+    : fixture.scheduled_on;
+  const date = formatDayMonth(day);
+  const name = `${fixture.team.short_name} v ${fixture.opponent.name}`;
+  return date ? `${name}, ${date}` : name;
 }

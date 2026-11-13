@@ -9,6 +9,7 @@ from flask.testing import FlaskClient
 
 from app.extensions import db
 from app.models import (
+    Article,
     Fixture,
     FixtureStatus,
     LeagueStanding,
@@ -373,23 +374,131 @@ def test_starting_eleven_is_capped(
     assert response.status_code == 422
 
 
-def test_completed_match_cannot_be_deleted(
+def _played_match(team: Any, current: Any) -> tuple[Any, Any]:
+    """A completed 1-0 win with a scorer, an appearance and a match report."""
+    scorer = factories.player(team, "Goal", "Scorer")
+    match = factories.fixture(
+        team,
+        current,
+        status=FixtureStatus.COMPLETED,
+        our_score=1,
+        their_score=0,
+        player_of_the_match_id=scorer.id,
+    )
+    db.session.add(
+        MatchEvent(
+            fixture_id=match.id,
+            event_type=MatchEventType.GOAL,
+            minute=30,
+            player_id=scorer.id,
+        )
+    )
+    db.session.add(
+        PlayerMatchStatistic(
+            fixture_id=match.id,
+            player_id=scorer.id,
+            lineup_role=LineupRole.STARTER,
+            goals=1,
+        )
+    )
+    factories.article(factories.article_category(), "Match report", fixture_id=match.id)
+    db.session.commit()
+    return match, scorer
+
+
+def test_deleting_a_played_match_needs_confirmation_and_says_what_goes(
     session: object, client: FlaskClient, roles: dict[RoleKey, Role]
 ) -> None:
     team = factories.team()
-    current = factories.season()
-    match = factories.fixture(
-        team, current, status=FixtureStatus.COMPLETED, our_score=1, their_score=0
-    )
+    match, _ = _played_match(team, factories.season())
     make_user("admin@example.com", RoleKey.CLUB_ADMIN)
-    db.session.commit()
 
     response = client.delete(
         f"/api/v1/admin/fixtures/{match.id}", headers=auth(client, "admin@example.com")
     )
 
     assert response.status_code == 409
+    error = response.get_json()["error"]
+    assert error["code"] == "confirmation_required"
+    assert error["details"]["has_result"] is True
+    assert error["details"]["score"] == {"ours": 1, "theirs": 0}
+    assert error["details"]["match_events"] == 1
+    assert error["details"]["appearances"] == 1
+    assert error["details"]["linked_articles"] == 1
     assert db.session.query(Fixture).count() == 1
+
+
+def test_confirmed_delete_removes_a_played_match_and_its_record(
+    session: object, client: FlaskClient, roles: dict[RoleKey, Role]
+) -> None:
+    team = factories.team()
+    match, scorer = _played_match(team, factories.season())
+    make_user("admin@example.com", RoleKey.CLUB_ADMIN)
+
+    response = client.delete(
+        f"/api/v1/admin/fixtures/{match.id}?confirm=true",
+        headers=auth(client, "admin@example.com"),
+    )
+
+    assert response.status_code == 200
+    db.session.expire_all()
+    assert db.session.query(Fixture).count() == 0
+    # The match's own record goes with it...
+    assert db.session.query(MatchEvent).count() == 0
+    assert db.session.query(PlayerMatchStatistic).count() == 0
+    # ...but the report about it and the player in it stay.
+    report = db.session.query(Article).one()
+    assert report.fixture_id is None
+    assert db.session.get(type(scorer), scorer.id) is not None
+
+
+def test_a_fixture_not_yet_played_is_deleted_without_confirmation(
+    session: object, client: FlaskClient, roles: dict[RoleKey, Role]
+) -> None:
+    team = factories.team()
+    match = factories.fixture(team, factories.season())
+    make_user("admin@example.com", RoleKey.CLUB_ADMIN)
+
+    response = client.delete(
+        f"/api/v1/admin/fixtures/{match.id}", headers=auth(client, "admin@example.com")
+    )
+
+    assert response.status_code == 200
+    assert db.session.query(Fixture).count() == 0
+
+
+@pytest.mark.rbac
+def test_a_team_manager_cannot_delete_a_result_even_with_confirmation(
+    session: object, client: FlaskClient, roles: dict[RoleKey, Role]
+) -> None:
+    team = factories.team()
+    match, _ = _played_match(team, factories.season())
+    manager = make_user("manager@example.com", RoleKey.TEAM_MANAGER)
+    attach(manager, team, MembershipCapacity.MANAGER)
+    headers = auth(client, "manager@example.com")
+
+    preview = client.get(f"/api/v1/admin/fixtures/{match.id}/deletion", headers=headers)
+    refused = client.delete(f"/api/v1/admin/fixtures/{match.id}?confirm=true", headers=headers)
+
+    assert preview.status_code == 403
+    assert refused.status_code == 403
+    assert db.session.query(Fixture).count() == 1
+
+
+def test_deletion_preview_matches_what_the_delete_would_refuse_with(
+    session: object, client: FlaskClient, roles: dict[RoleKey, Role]
+) -> None:
+    team = factories.team()
+    match, _ = _played_match(team, factories.season())
+    make_user("admin@example.com", RoleKey.CLUB_ADMIN)
+    headers = auth(client, "admin@example.com")
+
+    preview = client.get(f"/api/v1/admin/fixtures/{match.id}/deletion", headers=headers)
+    refusal = client.delete(f"/api/v1/admin/fixtures/{match.id}", headers=headers)
+
+    assert preview.status_code == 200
+    assert preview.get_json()["data"] == refusal.get_json()["error"]["details"]
+    assert preview.get_json()["data"]["requires_confirmation"] is True
 
 
 # --- standings -------------------------------------------------------------
