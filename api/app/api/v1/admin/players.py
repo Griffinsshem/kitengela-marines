@@ -35,6 +35,7 @@ from app.security.authorization import (
 )
 from app.security.permissions import Capability
 from app.services.audit import set_action
+from app.services.deletion import player_impact, require_confirmation
 from app.utils.errors import ApiError
 from app.utils.slugs import unique_slug
 
@@ -175,25 +176,40 @@ def update_own_profile() -> tuple[Response, int]:
     return jsonify({"data": serialize_player_admin(profile)}), 200
 
 
+@api_v1.get("/admin/players/<player_id>/deletion")
+@require_capability(Capability.MANAGE_USERS)
+def preview_player_deletion(player_id: str) -> tuple[Response, int]:
+    """What deleting this player would change, for the admin page to show first."""
+    player = _load_player(player_id)
+    return jsonify({"data": player_impact(player)}), 200
+
+
 @api_v1.delete("/admin/players/<player_id>")
 @require_capability(Capability.MANAGE_USERS)
 def delete_player(player_id: str) -> tuple[Response, int]:
-    """Club Admin only, and only for a player with no match record.
+    """Club Admin only.
 
-    A player who has appeared in a match is never deleted: the statistics and
-    match events reference them, and removing the row would silently rewrite
-    the club's history. Mark them FORMER instead.
+    A player with no match record goes straight away. One who has played is
+    named in the club's record, so deleting them must be confirmed with
+    `?confirm=true`, and the refusal says what would change: their appearances
+    are removed, and goals or cards they were involved in stay in the match
+    without a name.
+
+    Setting their status to 'former' remains the gentler option: it takes them
+    off the squad list while keeping their history, and the line-ups of matches
+    they played still link to them.
     """
     player = _load_player(player_id)
-    set_action("player.deleted")
+    impact = player_impact(player)
+    require_confirmation(
+        impact,
+        "This player has match records. Deleting them removes their appearances, "
+        "and their goals and cards will no longer be credited to anyone. Confirm "
+        "to delete them, or set their status to 'former' to keep their history.",
+    )
 
-    if player.statistics_count > 0:
-        raise ApiError(
-            "This player has match records. Set their status to 'former' instead.",
-            status_code=409,
-            code="conflict",
-        )
-
+    history = impact["requires_confirmation"]
+    set_action("player.deleted_with_history" if history else "player.deleted")
     db.session.delete(player)
     db.session.commit()
 

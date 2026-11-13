@@ -5,7 +5,9 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/admin/AuthProvider";
+import { DeleteRecord } from "@/components/admin/DeleteRecord";
 import { BLANK_PLAYER, PlayerForm, type PlayerDraft } from "@/components/admin/PlayerForm";
+import { describePlayerDeletion } from "@/lib/deletion";
 
 type PlayerPayload = {
   id: string;
@@ -116,6 +118,15 @@ export default function EditPlayerPage() {
       <div className="mt-8">
         <PlayerForm initial={draft} />
       </div>
+
+      <DeleteRecord
+        apiPath={`/admin/players/${player.id}`}
+        name={player.display_name}
+        noun="player"
+        describe={describePlayerDeletion}
+        alternative="If they have left the club, setting their status to Former takes them off the squad list and keeps their goals and appearances in the record."
+        returnTo="/admin/squad"
+      />
     </div>
   );
 }

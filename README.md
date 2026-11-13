@@ -119,7 +119,7 @@ Runs, stopping at the first failure:
 | `api` | `ruff check`, `ruff format --check`, `mypy app`, `pytest` |
 | `web` | `eslint`, `tsc --noEmit`, `vitest run`, `next build` |
 
-Currently **226 API tests** and **35 site tests**. A pre-commit hook runs the same thing.
+Currently **240 API tests** and **44 site tests**. A pre-commit hook runs the same thing.
 
 Two habits that have caught real bugs:
 
@@ -187,7 +187,7 @@ Around **$7 a month** removes this entirely.
 
 **The public API returns what a page renders, and no more.** Internal ids, draft articles and private player data are absent from public payloads by design, not by filtering in the frontend.
 
-**Deleting is refused rather than cascaded.** A photograph in use, a category with articles, a player with match records: the API says what is in the way instead of quietly taking related data with it.
+**Nothing is deleted by accident.** A photograph in use or a category with articles is refused, and the API says what is in the way. A played match or a player with match records can be deleted by a Club Admin (a result entered twice, a player who has left), but only after the API has listed exactly what goes with it and the request is repeated with `?confirm=true`. The admin shows that list before the button that names the record.
 
 **Times are stored as instants and shown in Kenyan time.** Kick-off is sent with an explicit `+03:00` offset, because a form that sends a bare time tells every supporter the wrong hour.
 

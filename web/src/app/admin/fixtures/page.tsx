@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/admin/AuthProvider";
-import { formatDayMonth, formatKickoff, formatMatchDate } from "@/lib/datetime";
+import { formatDayMonth, formatKickoff, formatMatchDate, nairobiDayKey } from "@/lib/datetime";
+import { likelyDuplicates } from "@/lib/deletion";
 
 type Row = {
   id: string;
@@ -25,6 +26,10 @@ type Row = {
  * Unlike the public site this does not split fixtures from results: an editor
  * is looking for one particular match, and remembering whether it has been
  * played yet is not their job.
+ *
+ * Matches that look entered twice (same team, opponent and day) are marked,
+ * so a duplicate result is found by scanning the list rather than by a
+ * supporter noticing it on the website.
  */
 export default function AdminFixturesPage() {
   const { authFetch } = useAuth();
@@ -54,6 +59,7 @@ export default function AdminFixturesPage() {
 
   const upcoming = rows?.filter((row) => !row.is_completed) ?? [];
   const played = rows?.filter((row) => row.is_completed) ?? [];
+  const duplicates = likelyDuplicates(rows ?? [], (iso) => nairobiDayKey(new Date(iso)));
 
   return (
     <div>
@@ -77,21 +83,36 @@ export default function AdminFixturesPage() {
         <div className="mt-8 border border-line bg-chalk px-6 py-10 text-center">
           <p className="font-display text-xl font-extrabold uppercase">No fixtures yet</p>
           <p className="mx-auto mt-3 max-w-md text-muted">
-            Fixtures added here appear on the website, and move to results once a score is
-            recorded.
+            Fixtures added here appear on the website, and move to results once a score is recorded.
           </p>
         </div>
       ) : (
         <div className="mt-8 space-y-10">
-          <FixtureGroup title="To play" rows={upcoming} />
-          <FixtureGroup title="Played" rows={played} />
+          {duplicates.size > 0 ? (
+            <p role="status" className="border-2 border-pitch bg-chalk px-4 py-3">
+              <span className="font-semibold">
+                {duplicates.size} matches look like they were entered more than once.
+              </span>{" "}
+              They are marked below. Open the one to remove and delete it at the foot of its page.
+            </p>
+          ) : null}
+          <FixtureGroup title="To play" rows={upcoming} duplicates={duplicates} />
+          <FixtureGroup title="Played" rows={played} duplicates={duplicates} />
         </div>
       )}
     </div>
   );
 }
 
-function FixtureGroup({ title, rows }: { title: string; rows: Row[] }) {
+function FixtureGroup({
+  title,
+  rows,
+  duplicates,
+}: {
+  title: string;
+  rows: Row[];
+  duplicates: Set<string>;
+}) {
   if (rows.length === 0) return null;
 
   return (
@@ -122,6 +143,11 @@ function FixtureGroup({ title, rows }: { title: string; rows: Row[] }) {
                   {date ?? "Date to be confirmed"}
                   {kickoff ? `, ${kickoff}` : ""}
                 </span>
+                {duplicates.has(row.id) ? (
+                  <span className="bg-pitch px-2 py-0.5 text-meta font-semibold text-chalk">
+                    Possible duplicate
+                  </span>
+                ) : null}
                 {row.status !== "scheduled" && !row.is_completed ? (
                   <span className="border border-line px-2 py-0.5 text-meta font-semibold capitalize">
                     {row.status}

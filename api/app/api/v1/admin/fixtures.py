@@ -37,6 +37,7 @@ from app.schemas.public import (
 from app.security.authorization import current_user, require_capability, require_team_scope
 from app.security.permissions import Capability
 from app.services.audit import set_action
+from app.services.deletion import fixture_impact, require_confirmation
 from app.services.results import record_result
 from app.utils.errors import ApiError
 from app.utils.pagination import paginate
@@ -236,24 +237,34 @@ def enter_result(fixture_id: str) -> tuple[Response, int]:
     return jsonify({"data": serialize_match_detail(fixture)}), 200
 
 
+@api_v1.get("/admin/fixtures/<fixture_id>/deletion")
+@require_capability(Capability.MANAGE_USERS)
+def preview_fixture_deletion(fixture_id: str) -> tuple[Response, int]:
+    """What deleting this fixture would remove, for the admin page to show first."""
+    fixture = _load_fixture(fixture_id)
+    return jsonify({"data": fixture_impact(fixture)}), 200
+
+
 @api_v1.delete("/admin/fixtures/<fixture_id>")
 @require_capability(Capability.MANAGE_USERS)
 def delete_fixture(fixture_id: str) -> tuple[Response, int]:
-    """Club Admin only, and only before a result exists.
+    """Club Admin only.
 
-    A played match is part of the club's record; cancelling it is a status
-    change, not a deletion.
+    A fixture that has not been played goes straight away. A played match is
+    part of the club's record, so deleting it (a result entered twice, a match
+    that never happened) must be confirmed with `?confirm=true`, and the
+    refusal says what would be removed. Its events and line-up go with it;
+    articles, galleries and videos about it stay, unlinked.
     """
     fixture = _load_fixture(fixture_id)
-    set_action("fixture.deleted")
+    impact = fixture_impact(fixture)
+    require_confirmation(
+        impact,
+        "This match has a result. Deleting it removes the result, its match events "
+        "and its line-up from the club's record. Confirm to delete it.",
+    )
 
-    if fixture.status == FixtureStatus.COMPLETED:
-        raise ApiError(
-            "A completed match cannot be deleted. Change its status instead.",
-            status_code=409,
-            code="conflict",
-        )
-
+    set_action("fixture.deleted_with_result" if impact["has_result"] else "fixture.deleted")
     db.session.delete(fixture)
     db.session.commit()
 

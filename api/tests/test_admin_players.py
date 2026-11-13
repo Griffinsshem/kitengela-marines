@@ -10,8 +10,14 @@ from flask.testing import FlaskClient
 from app.extensions import db
 from app.models import (
     Club,
+    Fixture,
+    FixtureStatus,
+    LineupRole,
+    MatchEvent,
+    MatchEventType,
     MembershipCapacity,
     Player,
+    PlayerMatchStatistic,
     PlayerPosition,
     PlayerStatus,
     Role,
@@ -367,6 +373,113 @@ def test_coach_cannot_delete_a_player(
 
     assert response.status_code == 403
     assert db.session.query(Player).count() == 1
+
+
+def _player_with_history(team: Any) -> tuple[Player, Any, Any]:
+    """A player who started a match, scored in it and was player of the match."""
+    player = factories.player(team, "Left", "Club")
+    match = factories.fixture(
+        team,
+        factories.season(),
+        status=FixtureStatus.COMPLETED,
+        our_score=1,
+        their_score=0,
+        player_of_the_match_id=player.id,
+    )
+    goal = MatchEvent(
+        fixture_id=match.id, event_type=MatchEventType.GOAL, minute=12, player_id=player.id
+    )
+    db.session.add(goal)
+    db.session.add(
+        PlayerMatchStatistic(
+            fixture_id=match.id, player_id=player.id, lineup_role=LineupRole.STARTER, goals=1
+        )
+    )
+    db.session.commit()
+    return player, match, goal
+
+
+def test_deleting_a_player_with_history_needs_confirmation(
+    session: object, client: FlaskClient, roles: dict[RoleKey, Role]
+) -> None:
+    team = factories.team()
+    player, _, _ = _player_with_history(team)
+    make_user("admin@example.com", RoleKey.CLUB_ADMIN)
+
+    response = client.delete(
+        f"/api/v1/admin/players/{player.id}", headers=auth(client, "admin@example.com")
+    )
+
+    assert response.status_code == 409
+    error = response.get_json()["error"]
+    assert error["code"] == "confirmation_required"
+    assert error["details"]["appearances"] == 1
+    assert error["details"]["match_events"] == 1
+    assert error["details"]["player_of_the_match"] == 1
+    assert db.session.query(Player).count() == 1
+
+
+def test_confirmed_delete_removes_a_player_but_keeps_their_matches(
+    session: object, client: FlaskClient, roles: dict[RoleKey, Role]
+) -> None:
+    team = factories.team()
+    player, match, goal = _player_with_history(team)
+    make_user("admin@example.com", RoleKey.CLUB_ADMIN)
+
+    response = client.delete(
+        f"/api/v1/admin/players/{player.id}?confirm=true",
+        headers=auth(client, "admin@example.com"),
+    )
+
+    assert response.status_code == 200
+    db.session.expire_all()
+    assert db.session.query(Player).count() == 0
+    assert db.session.query(PlayerMatchStatistic).count() == 0
+    # The match and its goal stay; the goal is simply no longer credited.
+    remaining = db.session.get(Fixture, match.id)
+    assert remaining is not None
+    assert remaining.our_score == 1
+    assert remaining.player_of_the_match_id is None
+    kept_goal = db.session.get(MatchEvent, goal.id)
+    assert kept_goal is not None
+    assert kept_goal.player_id is None
+
+
+def test_a_player_with_a_login_is_deleted_and_the_login_kept(
+    session: object, client: FlaskClient, roles: dict[RoleKey, Role]
+) -> None:
+    team = factories.team()
+    login = make_user("player@example.com", RoleKey.PLAYER)
+    player = factories.player(team, "Has", "Login", user_id=login.id)
+    make_user("admin@example.com", RoleKey.CLUB_ADMIN)
+    headers = auth(client, "admin@example.com")
+
+    preview = client.get(f"/api/v1/admin/players/{player.id}/deletion", headers=headers)
+    assert preview.get_json()["data"]["has_login"] is True
+    assert preview.get_json()["data"]["requires_confirmation"] is False
+
+    response = client.delete(f"/api/v1/admin/players/{player.id}", headers=headers)
+
+    assert response.status_code == 200
+    assert db.session.query(Player).count() == 0
+    assert db.session.query(User).filter_by(email="player@example.com").one() is not None
+
+
+@pytest.mark.rbac
+def test_coach_cannot_preview_a_player_deletion(
+    session: object, client: FlaskClient, roles: dict[RoleKey, Role]
+) -> None:
+    team = factories.team()
+    coach = make_user("coach@example.com", RoleKey.COACH)
+    attach(coach, team, MembershipCapacity.COACH)
+    player = factories.player(team, "Squad", "Member")
+    db.session.commit()
+
+    response = client.get(
+        f"/api/v1/admin/players/{player.id}/deletion", headers=auth(client, "coach@example.com")
+    )
+
+    assert response.status_code == 403
 
 
 # --- teams and staff -------------------------------------------------------
