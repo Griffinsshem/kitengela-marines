@@ -529,3 +529,105 @@ def serialize_fixture_admin(fixture: Fixture) -> dict[str, Any]:
         }
     )
     return data
+
+
+def serialize_fixture_admin_detail(fixture: Fixture) -> dict[str, Any]:
+    """One fixture for its edit page, with the recorded result included.
+
+    The result comes back in exactly the shape the result endpoint accepts, so
+    the admin form opens pre-filled and sends the whole record back. That
+    endpoint replaces line-up and events wholesale; a form that could not see
+    them would erase whatever it did not resend.
+
+    Kept out of the list serializer: a list has no use for line-ups, and
+    loading one per row would be a query per match.
+    """
+    data = serialize_fixture_admin(fixture)
+    data.update(
+        {
+            "player_of_the_match_id": _id_or_none(fixture.player_of_the_match_id),
+            "lineup": [
+                _serialize_lineup_entry(entry)
+                for entry in sorted(fixture.player_statistics, key=_lineup_order)
+            ],
+            "events": [_serialize_event_input(event) for event in fixture.events],
+            "players": _players_named_in(fixture),
+        }
+    )
+    return data
+
+
+def _players_named_in(fixture: Fixture) -> dict[str, dict[str, Any]]:
+    """Everyone the record mentions, by id, with their current status.
+
+    The form lists the current squad, which leaves out anyone who has since
+    left. This lets it still name them where they appear (a line-up, a goal,
+    player of the match) instead of losing them on the next save.
+    """
+    named: dict[str, Player] = {}
+    for entry in fixture.player_statistics:
+        named[str(entry.player_id)] = entry.player
+    for event in fixture.events:
+        for player in (event.player, event.related_player):
+            if player is not None:
+                named[str(player.id)] = player
+    if fixture.player_of_the_match is not None:
+        named[str(fixture.player_of_the_match.id)] = fixture.player_of_the_match
+
+    return {
+        player_id: {
+            "display_name": player.display_name,
+            "squad_number": player.squad_number,
+            "status": player.status,
+        }
+        for player_id, player in named.items()
+    }
+
+
+_ROLE_ORDER = {
+    LineupRole.STARTER: 0,
+    LineupRole.SUBSTITUTE: 1,
+    LineupRole.UNUSED_SUBSTITUTE: 2,
+}
+
+
+def _lineup_order(entry: PlayerMatchStatistic) -> tuple[int, int, str]:
+    player = entry.player
+    return (
+        _ROLE_ORDER.get(entry.lineup_role, 3),
+        player.squad_number if player.squad_number is not None else 1000,
+        player.display_name,
+    )
+
+
+def _id_or_none(value: uuid.UUID | None) -> str | None:
+    return str(value) if value is not None else None
+
+
+def _serialize_lineup_entry(entry: PlayerMatchStatistic) -> dict[str, Any]:
+    """One appearance, exactly as the result endpoint accepts it."""
+    return {
+        "player_id": str(entry.player_id),
+        "lineup_role": entry.lineup_role,
+        "minutes_played": entry.minutes_played,
+        "goals": entry.goals,
+        "assists": entry.assists,
+        "yellow_cards": entry.yellow_cards,
+        "red_cards": entry.red_cards,
+        "clean_sheet": entry.clean_sheet,
+        "goals_conceded": entry.goals_conceded,
+        "saves": entry.saves,
+    }
+
+
+def _serialize_event_input(event: MatchEvent) -> dict[str, Any]:
+    """One event, as the result endpoint accepts it, every field included."""
+    return {
+        "event_type": event.event_type,
+        "minute": event.minute,
+        "added_time": event.added_time,
+        "player_id": _id_or_none(event.player_id),
+        "related_player_id": _id_or_none(event.related_player_id),
+        "is_opposition": event.is_opposition,
+        "note": event.note,
+    }
