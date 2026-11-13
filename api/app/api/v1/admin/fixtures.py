@@ -18,7 +18,7 @@ from app.extensions import db
 from app.models.club import Team
 from app.models.competition import Competition, Opponent, Season
 from app.models.enums import FixtureStatus
-from app.models.match import Fixture, LeagueStanding
+from app.models.match import Fixture, LeagueStanding, MatchEvent, PlayerMatchStatistic
 from app.schemas.admin import (
     CompetitionCreate,
     FixtureCreate,
@@ -31,6 +31,7 @@ from app.schemas.admin import (
 from app.schemas.public import (
     serialize_fixture,
     serialize_fixture_admin,
+    serialize_fixture_admin_detail,
     serialize_match_detail,
     serialize_standing,
 )
@@ -205,6 +206,23 @@ def update_fixture(fixture_id: str) -> tuple[Response, int]:
     if payload.opponent_id is not None and db.session.get(Opponent, payload.opponent_id) is None:
         raise _invalid("opponent_id", "Unknown opponent.")
 
+    # A played match stays played. Moving it back to scheduled (or to
+    # postponed or cancelled) would drop its result from the results page
+    # while leaving the score behind. Its date, ground and opponent can still
+    # be corrected here; the result itself is corrected with the result form,
+    # or removed by deleting the match.
+    if (
+        fixture.status == FixtureStatus.COMPLETED
+        and "status" in payload.model_fields_set
+        and payload.status != FixtureStatus.COMPLETED
+    ):
+        raise ApiError(
+            "This match has a result, so its status cannot be changed. Correct the "
+            "result instead, or delete the match if it should not be there.",
+            status_code=409,
+            code="conflict",
+        )
+
     apply_changes(fixture, payload)
     commit_or_conflict("That change conflicts with an existing fixture.")
 
@@ -343,9 +361,23 @@ def list_fixtures_admin() -> tuple[Response, int]:
 @api_v1.get("/admin/fixtures/<fixture_id>")
 @require_capability(Capability.MANAGE_FIXTURES)
 def get_fixture_admin(fixture_id: str) -> tuple[Response, int]:
-    fixture = _load_fixture(fixture_id)
+    """One fixture with its recorded result, for the edit page."""
+    fixture = db.session.get(
+        Fixture,
+        parse_uuid(fixture_id, "fixture id"),
+        # The line-up names each player; load them with it rather than one
+        # query per appearance.
+        options=[
+            selectinload(Fixture.player_statistics).selectinload(PlayerMatchStatistic.player),
+            selectinload(Fixture.events).selectinload(MatchEvent.player),
+            selectinload(Fixture.events).selectinload(MatchEvent.related_player),
+            selectinload(Fixture.player_of_the_match),
+        ],
+    )
+    if fixture is None:
+        not_found("Fixture not found.")
     require_team_scope(current_user(), Capability.MANAGE_FIXTURES, fixture.team_id)
-    return jsonify({"data": serialize_fixture_admin(fixture)}), 200
+    return jsonify({"data": serialize_fixture_admin_detail(fixture)}), 200
 
 
 @api_v1.get("/admin/seasons")

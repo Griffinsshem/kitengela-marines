@@ -19,6 +19,7 @@ from app.models import (
     MembershipCapacity,
     PlayerMatchStatistic,
     PlayerPosition,
+    PlayerStatus,
     Role,
     RoleKey,
     TeamGender,
@@ -499,6 +500,257 @@ def test_deletion_preview_matches_what_the_delete_would_refuse_with(
     assert preview.status_code == 200
     assert preview.get_json()["data"] == refusal.get_json()["error"]["details"]
     assert preview.get_json()["data"]["requires_confirmation"] is True
+
+
+def _fully_recorded_match(team: Any) -> tuple[Any, dict[str, Any]]:
+    """A 2-1 win recorded with every detail the form cannot show itself:
+    goalkeeping figures, an assist linked to a goal, added time, a note, and a
+    scorer who has since left the club."""
+    keeper = factories.player(
+        team, "Brian", "Otieno", squad_number=1, position=PlayerPosition.GOALKEEPER
+    )
+    scorer = factories.player(team, "Dennis", "Kiprop", squad_number=9)
+    creator = factories.player(team, "Peter", "Saitoti", squad_number=10)
+    match = factories.fixture(
+        team,
+        factories.season(),
+        status=FixtureStatus.COMPLETED,
+        our_score=2,
+        their_score=1,
+        player_of_the_match_id=keeper.id,
+        report="A hard-earned win.",
+    )
+    db.session.add_all(
+        [
+            MatchEvent(
+                fixture_id=match.id,
+                event_type=MatchEventType.GOAL,
+                minute=12,
+                player_id=scorer.id,
+                related_player_id=creator.id,
+            ),
+            MatchEvent(
+                fixture_id=match.id,
+                event_type=MatchEventType.GOAL,
+                minute=90,
+                added_time=3,
+                player_id=creator.id,
+                note="Header from a corner",
+            ),
+            MatchEvent(
+                fixture_id=match.id,
+                event_type=MatchEventType.GOAL,
+                minute=60,
+                is_opposition=True,
+            ),
+            PlayerMatchStatistic(
+                fixture_id=match.id,
+                player_id=keeper.id,
+                lineup_role=LineupRole.STARTER,
+                minutes_played=90,
+                goals_conceded=1,
+                saves=6,
+                clean_sheet=False,
+            ),
+            PlayerMatchStatistic(
+                fixture_id=match.id,
+                player_id=scorer.id,
+                lineup_role=LineupRole.STARTER,
+                minutes_played=75,
+                goals=1,
+            ),
+            PlayerMatchStatistic(
+                fixture_id=match.id,
+                player_id=creator.id,
+                lineup_role=LineupRole.SUBSTITUTE,
+                minutes_played=15,
+                goals=1,
+                assists=1,
+            ),
+        ]
+    )
+    # The scorer has since left: off the squad list, still in this match.
+    scorer.status = PlayerStatus.FORMER
+    db.session.commit()
+    return match, {"keeper": keeper, "scorer": scorer, "creator": creator}
+
+
+def test_the_edit_page_receives_the_whole_recorded_result(
+    session: object, client: FlaskClient, roles: dict[RoleKey, Role]
+) -> None:
+    team = factories.team()
+    match, people = _fully_recorded_match(team)
+    make_user("admin@example.com", RoleKey.CLUB_ADMIN)
+
+    response = client.get(
+        f"/api/v1/admin/fixtures/{match.id}", headers=auth(client, "admin@example.com")
+    )
+
+    data = response.get_json()["data"]
+    assert data["our_score"] == 2
+    assert data["player_of_the_match_id"] == str(people["keeper"].id)
+    assert data["report"] == "A hard-earned win."
+
+    keeper = next(e for e in data["lineup"] if e["player_id"] == str(people["keeper"].id))
+    assert keeper["saves"] == 6
+    assert keeper["goals_conceded"] == 1
+    assert keeper["clean_sheet"] is False
+    # Starters first, then by squad number.
+    numbers = [data["players"][e["player_id"]]["squad_number"] for e in data["lineup"]]
+    assert numbers == [1, 9, 10]
+
+    # Someone who has left is still named, so the form can show them.
+    assert data["players"][str(people["scorer"].id)] == {
+        "display_name": "Dennis Kiprop",
+        "squad_number": 9,
+        "status": "former",
+    }
+
+    # In minute order, every field the result endpoint accepts.
+    assert [e["minute"] for e in data["events"]] == [12, 60, 90]
+    assert data["events"][0]["related_player_id"] == str(people["creator"].id)
+    assert data["events"][1]["is_opposition"] is True
+    assert data["events"][2]["added_time"] == 3
+    assert data["events"][2]["note"] == "Header from a corner"
+
+
+def test_sending_the_record_back_with_one_change_keeps_everything_else(
+    session: object, client: FlaskClient, roles: dict[RoleKey, Role]
+) -> None:
+    """The regression: correcting a score used to erase player of the match,
+    and any partial edit replaced the whole line-up and event list."""
+    team = factories.team()
+    match, people = _fully_recorded_match(team)
+    make_user("admin@example.com", RoleKey.CLUB_ADMIN)
+    headers = auth(client, "admin@example.com")
+
+    record = client.get(f"/api/v1/admin/fixtures/{match.id}", headers=headers).get_json()["data"]
+    payload = {
+        "our_score": 3,  # the one correction
+        "their_score": record["their_score"],
+        "report": record["report"],
+        "player_of_the_match_id": record["player_of_the_match_id"],
+        "lineup": record["lineup"],
+        "events": record["events"],
+    }
+
+    response = client.put(
+        f"/api/v1/admin/fixtures/{match.id}/result", json=payload, headers=headers
+    )
+
+    assert response.status_code == 200
+    after = client.get(f"/api/v1/admin/fixtures/{match.id}", headers=headers).get_json()["data"]
+    assert after["our_score"] == 3
+    for key in ("player_of_the_match_id", "report", "lineup", "events"):
+        assert after[key] == record[key], key
+
+
+def test_the_fixtures_list_does_not_carry_line_ups(
+    session: object, client: FlaskClient, roles: dict[RoleKey, Role]
+) -> None:
+    team = factories.team()
+    _fully_recorded_match(team)
+    make_user("admin@example.com", RoleKey.CLUB_ADMIN)
+
+    response = client.get("/api/v1/admin/fixtures", headers=auth(client, "admin@example.com"))
+
+    row = response.get_json()["data"][0]
+    assert "lineup" not in row
+    assert "events" not in row
+
+
+def test_a_match_with_an_uncredited_goal_can_still_be_corrected(
+    session: object, client: FlaskClient, roles: dict[RoleKey, Role]
+) -> None:
+    """Deleting a player leaves their goals unnamed. Saving that match again
+    must not be refused for it."""
+    team = factories.team()
+    match, people = _fully_recorded_match(team)
+    make_user("admin@example.com", RoleKey.CLUB_ADMIN)
+    headers = auth(client, "admin@example.com")
+    client.delete(f"/api/v1/admin/players/{people['scorer'].id}?confirm=true", headers=headers)
+
+    record = client.get(f"/api/v1/admin/fixtures/{match.id}", headers=headers).get_json()["data"]
+    uncredited = record["events"][0]
+    assert uncredited["player_id"] is None
+    assert uncredited["is_opposition"] is False
+
+    response = client.put(
+        f"/api/v1/admin/fixtures/{match.id}/result",
+        json={
+            "our_score": 2,
+            "their_score": 1,
+            "player_of_the_match_id": record["player_of_the_match_id"],
+            "lineup": record["lineup"],
+            "events": record["events"],
+        },
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+
+
+def test_an_opposition_event_cannot_name_our_player(
+    session: object, client: FlaskClient, roles: dict[RoleKey, Role]
+) -> None:
+    team = factories.team()
+    player = factories.player(team, "Our", "Player")
+    match = factories.fixture(team, factories.season())
+    make_user("admin@example.com", RoleKey.CLUB_ADMIN)
+
+    response = client.put(
+        f"/api/v1/admin/fixtures/{match.id}/result",
+        json={
+            "our_score": 0,
+            "their_score": 1,
+            "events": [{"event_type": "goal", "is_opposition": True, "player_id": str(player.id)}],
+        },
+        headers=auth(client, "admin@example.com"),
+    )
+
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize("status", ["scheduled", "postponed", "cancelled"])
+def test_a_played_match_cannot_be_moved_back_to_the_fixtures_list(
+    session: object, client: FlaskClient, roles: dict[RoleKey, Role], status: str
+) -> None:
+    """The scheduling form used to send 'scheduled' for a played match, which
+    quietly took its result off the results page."""
+    team = factories.team()
+    match, _ = _played_match(team, factories.season())
+    make_user("admin@example.com", RoleKey.CLUB_ADMIN)
+
+    response = client.patch(
+        f"/api/v1/admin/fixtures/{match.id}",
+        json={"status": status},
+        headers=auth(client, "admin@example.com"),
+    )
+
+    assert response.status_code == 409
+    db.session.expire_all()
+    assert db.session.get(Fixture, match.id).status == FixtureStatus.COMPLETED
+
+
+def test_a_played_match_can_still_have_its_ground_corrected(
+    session: object, client: FlaskClient, roles: dict[RoleKey, Role]
+) -> None:
+    team = factories.team()
+    match, _ = _played_match(team, factories.season())
+    make_user("admin@example.com", RoleKey.CLUB_ADMIN)
+
+    response = client.patch(
+        f"/api/v1/admin/fixtures/{match.id}",
+        json={"venue_name": "Kitengela Stadium"},
+        headers=auth(client, "admin@example.com"),
+    )
+
+    assert response.status_code == 200
+    db.session.expire_all()
+    corrected = db.session.get(Fixture, match.id)
+    assert corrected is not None
+    assert corrected.venue_name == "Kitengela Stadium"
+    assert corrected.status == FixtureStatus.COMPLETED
 
 
 # --- standings -------------------------------------------------------------

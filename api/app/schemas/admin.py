@@ -276,12 +276,15 @@ class MatchEventInput(StrictModel):
     player_id: uuid.UUID | None = None
     related_player_id: uuid.UUID | None = None
     is_opposition: bool = False
+    # Our events may leave the player unnamed. Deleting a player keeps their
+    # goals and cards in the match without a name, and a correction to that
+    # match must still be savable; requiring a name here made it impossible.
     note: str | None = Field(default=None, max_length=255)
 
     @model_validator(mode="after")
-    def _our_events_name_a_player(self) -> MatchEventInput:
-        if not self.is_opposition and self.player_id is None:
-            raise ValueError("A player is required unless the event is an opposition one.")
+    def _opposition_events_name_none_of_ours(self) -> MatchEventInput:
+        if self.is_opposition and (self.player_id or self.related_player_id):
+            raise ValueError("An opposition event cannot name one of our players.")
         return self
 
 

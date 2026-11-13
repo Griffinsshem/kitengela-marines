@@ -10,6 +10,7 @@ import { BLANK_FIXTURE, FixtureForm, type FixtureDraft } from "@/components/admi
 import { ResultForm } from "@/components/admin/ResultForm";
 import { formatDayMonth, nairobiDayKey } from "@/lib/datetime";
 import { describeFixtureDeletion } from "@/lib/deletion";
+import type { RecordedResult } from "@/lib/result-record";
 
 type FixturePayload = {
   id: string;
@@ -25,7 +26,7 @@ type FixturePayload = {
   season_id: string;
   opponent_id: string;
   is_completed: boolean;
-};
+} & Omit<RecordedResult, "is_completed">;
 
 /**
  * Splits the kick-off instant back into the date and time boxes the form uses,
@@ -97,6 +98,7 @@ export default function EditFixturePage() {
         // 'completed' is not an editable status; recording a result is what
         // sets it, so the dropdown falls back to scheduled.
         status: record.status === "completed" ? "scheduled" : record.status,
+        is_completed: record.is_completed,
       });
     }
 
@@ -144,14 +146,26 @@ export default function EditFixturePage() {
 
       <section className="mt-12">
         <h2 className="border-b border-line pb-2 font-display text-xl font-extrabold uppercase">
-          {fixture.is_completed ? "Update the result" : "Record the result"}
+          {fixture.is_completed ? "Correct the result" : "Record the result"}
         </h2>
         <div className="mt-6">
           <ResultForm
+            // Re-mounts with fresh fields if the record is reloaded.
+            key={fixture.id}
             fixtureId={fixture.id}
             teamSlug={fixture.team.slug}
             ourName={fixture.team.short_name}
             opponentName={fixture.opponent.name}
+            recorded={{
+              is_completed: fixture.is_completed,
+              our_score: fixture.our_score,
+              their_score: fixture.their_score,
+              report: fixture.report,
+              player_of_the_match_id: fixture.player_of_the_match_id,
+              lineup: fixture.lineup,
+              events: fixture.events,
+              players: fixture.players,
+            }}
           />
         </div>
       </section>

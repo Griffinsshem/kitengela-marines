@@ -30,6 +30,8 @@ export type FixtureDraft = {
   date: string;
   time: string;
   status: string;
+  /** Played: the status is fixed, and the form must not send one. */
+  is_completed?: boolean;
 };
 
 export const BLANK_FIXTURE: FixtureDraft = {
@@ -162,7 +164,9 @@ export function FixtureForm({ initial }: { initial?: FixtureDraft }) {
     if (isNew) {
       payload.team_id = draft.team_id;
       payload.season_id = draft.season_id;
-    } else {
+    } else if (!draft.is_completed) {
+      // A played match keeps its status; sending one would move it back to
+      // the fixtures list, which the API refuses.
       payload.status = draft.status;
     }
 
@@ -234,6 +238,15 @@ export function FixtureForm({ initial }: { initial?: FixtureDraft }) {
               </select>
             </Field>
           </>
+        ) : draft.is_completed ? (
+          <div>
+            <p className="text-meta font-semibold">Status</p>
+            <p className="mt-2 py-2.5 font-display text-xl font-extrabold uppercase">Played</p>
+            <p className="mt-1.5 text-meta text-muted">
+              Set by the result below. Delete the match at the foot of this page if it should not be
+              there.
+            </p>
+          </div>
         ) : (
           <Field label="Status" htmlFor="status" hint="A result is recorded separately, below.">
             <select

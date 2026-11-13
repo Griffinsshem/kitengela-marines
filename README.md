@@ -119,7 +119,7 @@ Runs, stopping at the first failure:
 | `api` | `ruff check`, `ruff format --check`, `mypy app`, `pytest` |
 | `web` | `eslint`, `tsc --noEmit`, `vitest run`, `next build` |
 
-Currently **240 API tests** and **44 site tests**. A pre-commit hook runs the same thing.
+Currently **249 API tests** and **53 site tests**. A pre-commit hook runs the same thing.
 
 Two habits that have caught real bugs:
 
