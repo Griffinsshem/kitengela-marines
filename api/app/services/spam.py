@@ -51,10 +51,3 @@ def accepted_response() -> tuple[dict[str, object], int]:
     club's phone number, which the contact page shows anyway.
     """
     return {"data": {"received": True}}, 202
-
-
-def client_ip(headers: dict[str, str], remote_addr: str | None) -> str | None:
-    forwarded = headers.get("X-Forwarded-For", "")
-    if forwarded:
-        return forwarded.split(",")[0].strip()[:45]
-    return remote_addr

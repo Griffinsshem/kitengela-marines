@@ -232,6 +232,10 @@ def update_user(user_id: str) -> tuple[Response, int]:
     if "full_name" in values:
         user.full_name = values["full_name"]
     if "is_active" in values:
+        if user.is_active and values["is_active"] is False:
+            # So that switching the account back on later does not also
+            # bring back every session it had.
+            user.revoke_sessions()
         user.is_active = values["is_active"]
 
     # A user always has exactly one role, but the type system cannot know
@@ -269,6 +273,9 @@ def reset_user_password(user_id: str) -> tuple[Response, int]:
 
     password = _temporary_password()
     user.set_password(password)
+    # A reset usually means the old password leaked: end any session that
+    # someone holding it may already have.
+    user.revoke_sessions()
     commit_or_conflict("That password could not be reset.")
 
     return jsonify({"data": _serialize(user), "temporary_password": password}), 200

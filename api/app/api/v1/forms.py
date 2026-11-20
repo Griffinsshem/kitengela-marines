@@ -16,11 +16,11 @@ from app.models.enums import SubmissionKind
 from app.models.outreach import Sponsor, Submission
 from app.schemas.public import serialize_sponsor
 from app.schemas.public_forms import ContactSubmission, PartnershipSubmission
+from app.security.client_ip import client_ip
 from app.services.spam import (
     SubmissionRejectedError,
     accepted_response,
     check_not_automated,
-    client_ip,
 )
 from app.utils.errors import ApiError
 from app.utils.http import cached
@@ -68,7 +68,7 @@ def submit_contact() -> tuple[Response, int]:
         phone=payload.phone,
         subject=payload.subject,
         message=payload.message,
-        ip_address=client_ip(dict(request.headers), request.remote_addr),
+        ip_address=client_ip()[:45],
     )
     db.session.add(submission)
     db.session.commit()
@@ -97,7 +97,7 @@ def submit_partnership_enquiry() -> tuple[Response, int]:
         phone=payload.phone,
         interest=payload.interest,
         message=payload.message,
-        ip_address=client_ip(dict(request.headers), request.remote_addr),
+        ip_address=client_ip()[:45],
     )
     db.session.add(submission)
     db.session.commit()

@@ -11,6 +11,8 @@ from app.api.v1 import api_v1
 from app.cli import register_cli
 from app.config import Settings, get_settings
 from app.extensions import cors, db, jwt, limiter, migrate
+from app.security import rate_limit_storage  # noqa: F401  registers appdb://
+from app.security.headers import register_security_headers
 from app.security.jwt_errors import register_jwt_error_handlers
 from app.services.audit import register_audit_listener
 from app.storage import get_storage
@@ -43,7 +45,7 @@ def create_app(settings: Settings | None = None) -> Flask:
         JWT_COOKIE_CSRF_PROTECT=True,
         JWT_ACCESS_COOKIE_PATH="/api/v1",
         JWT_REFRESH_COOKIE_PATH="/api/v1/auth/refresh",
-        RATELIMIT_STORAGE_URI=settings.RATELIMIT_STORAGE_URI,
+        RATELIMIT_STORAGE_URI=settings.ratelimit_storage_uri,
         RATELIMIT_HEADERS_ENABLED=True,
         RATELIMIT_ENABLED=settings.RATELIMIT_ENABLED,
         MAX_CONTENT_LENGTH=settings.MEDIA_MAX_UPLOAD_MB * 1024 * 1024,
@@ -67,6 +69,7 @@ def create_app(settings: Settings | None = None) -> Flask:
     )
 
     register_error_handlers(app)
+    register_security_headers(app, settings)
     register_cli(app)
     app.register_blueprint(api_v1)
 

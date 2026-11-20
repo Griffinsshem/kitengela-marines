@@ -33,6 +33,7 @@ from app.models.media import Gallery, GalleryItem, MediaAsset, Video
 from app.models.news import Article, ArticleCategory
 from app.models.outreach import Sponsor, Submission
 from app.models.people import Player, StaffMember
+from app.models.security import RateLimitCounter
 
 __all__ = [
     "Article",
@@ -56,6 +57,7 @@ __all__ = [
     "PlayerMatchStatistic",
     "PlayerPosition",
     "PlayerStatus",
+    "RateLimitCounter",
     "Role",
     "RoleKey",
     "Season",

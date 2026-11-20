@@ -55,6 +55,22 @@ def verify_password(stored_hash: str, plaintext: str) -> bool:
         return False
 
 
+_dummy_hash: str | None = None
+
+
+def burn_verification(plaintext: str) -> None:
+    """Spend the same time a real check would, for an account that cannot sign in.
+
+    Without this, a sign-in for an address with no account answers in a few
+    milliseconds while a real account takes a full Argon2 verification, and
+    the difference tells anyone timing the responses which addresses exist.
+    """
+    global _dummy_hash
+    if _dummy_hash is None:
+        _dummy_hash = _hasher.hash("timing-equaliser-not-a-real-password")
+    verify_password(_dummy_hash, plaintext)
+
+
 def needs_rehash(stored_hash: str) -> bool:
     """True when the hash predates the current parameters, so login can upgrade it."""
     try:

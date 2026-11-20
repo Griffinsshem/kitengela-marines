@@ -4,7 +4,16 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Table, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Table,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
 from app.extensions import Base, db
@@ -49,6 +58,11 @@ class User(UUIDPrimaryKey, Timestamped, Base):
 
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Carried in every token as the "sv" claim. Raising it (revoke_sessions)
+    # makes every token issued before that moment worthless.
+    session_version: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
 
     roles: Mapped[list[Role]] = relationship(secondary=user_roles, back_populates="users")
     memberships: Mapped[list[TeamMembership]] = relationship(
@@ -65,6 +79,23 @@ class User(UUIDPrimaryKey, Timestamped, Base):
 
     def check_password(self, plaintext: str) -> bool:
         return verify_password(self.password_hash, plaintext)
+
+    def revoke_sessions(self) -> None:
+        """Sign this account out everywhere: every token issued so far stops working.
+
+        Deliberately separate from set_password, which also runs when sign-in
+        quietly upgrades an old hash; that must not end the session it starts.
+        """
+        self.session_version = (self.session_version or 0) + 1
+
+    def token_claims(self) -> dict[str, int]:
+        return {"sv": self.session_version or 0}
+
+    def token_is_current(self, claims: dict[str, object]) -> bool:
+        # Tokens from before this claim existed count as version 0, so
+        # deploying it signs nobody out.
+        version = claims.get("sv", 0)
+        return isinstance(version, int) and version == (self.session_version or 0)
 
     @property
     def role_keys(self) -> set[RoleKey]:

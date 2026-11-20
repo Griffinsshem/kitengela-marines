@@ -15,13 +15,14 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from flask import g, has_request_context, request
+from flask import g, has_request_context
 from sqlalchemy import event, inspect
 from sqlalchemy.orm import Session
 
 from app.extensions import db
 from app.models.audit import AuditLog
 from app.models.identity import User
+from app.security.client_ip import client_ip
 
 # Tables worth a permanent record. Reads are never audited, and neither are
 # the audit rows themselves.
@@ -78,11 +79,7 @@ def _actor() -> tuple[uuid.UUID | None, str | None]:
 def _client_ip() -> str | None:
     if not has_request_context():
         return None
-    # X-Forwarded-For is set by Render's proxy; the first entry is the client.
-    forwarded = request.headers.get("X-Forwarded-For", "")
-    if forwarded:
-        return forwarded.split(",")[0].strip()[:45]
-    return request.remote_addr
+    return client_ip()[:45]
 
 
 def _label(instance: object) -> str | None:

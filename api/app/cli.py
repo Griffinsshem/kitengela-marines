@@ -99,5 +99,6 @@ def register_cli(app: Flask) -> None:
             raise click.ClickException("No user with that email.")
 
         user.set_password(password)
+        user.revoke_sessions()
         db.session.commit()
-        click.echo(f"Password updated for {user.email}")
+        click.echo(f"Password updated for {user.email}; existing sessions signed out")

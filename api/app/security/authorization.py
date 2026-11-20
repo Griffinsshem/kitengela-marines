@@ -6,7 +6,7 @@ from functools import wraps
 from typing import Any
 
 from flask import g
-from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
+from flask_jwt_extended import get_jwt, get_jwt_identity, verify_jwt_in_request
 
 from app.extensions import db
 from app.models.identity import User
@@ -43,7 +43,7 @@ def load_current_user() -> User:
     # session already has cached. A deactivated account must be refused on the
     # very next request, not whenever the identity map happens to be cold.
     user = db.session.get(User, user_id, populate_existing=True)
-    if user is None or not user.is_active:
+    if user is None or not user.is_active or not user.token_is_current(get_jwt()):
         raise AuthenticationError("Invalid credentials.")
 
     g.current_user = user
