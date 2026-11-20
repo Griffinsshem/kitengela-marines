@@ -55,7 +55,10 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version-file: api/.python-version
+          # The minor version Render runs (api/.python-version pins 3.12.7).
+          # Not the exact patch: hosted runners do not carry every patch
+          # build, and pinning one breaks CI whenever the runner image moves.
+          python-version: "3.12"
           cache: pip
           cache-dependency-path: api/requirements*.txt
 
