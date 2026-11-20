@@ -48,6 +48,10 @@ Flask 3, SQLAlchemy 2, PostgreSQL, with Alembic migrations. 24 tables covering t
 Next.js 16 App Router, TypeScript in strict mode, Tailwind v4. Public pages are statically generated and revalidated on a timer; the admin is client-side behind a login.
 
 - **The access token lives in memory only** — never in `localStorage`, so a cross-site scripting bug cannot steal it.
+- **Admin lists page through everything** with "Load more", instead of silently stopping at the first 50 or 100 records.
+- **Editors are warned before losing work**: leaving a form with unsaved changes, by link or by closing the tab, asks first.
+- **Failures stay contained**: the admin has its own error page inside its navigation, and a root `global-error` catches anything that breaks the layout itself.
+- **Search engines get structured data** (schema.org `SportsOrganization`, `SportsTeam`, `SportsEvent`) for the club, each team and every match.
 - **Every API response is validated** with zod before it reaches a component.
 - **Failures are distinguished from emptiness.** "No fixtures announced" and "the server is not answering" are different sentences, because telling supporters the club has no fixtures when the API is down would be false.
 - **Kenyan time is explicit everywhere.** Every date and time is formatted in `Africa/Nairobi`, not the visitor's timezone.
@@ -131,7 +135,7 @@ Runs, stopping at the first failure:
 | `api` | `ruff check`, `ruff format --check`, `mypy app`, `pytest` |
 | `web` | `eslint`, `tsc --noEmit`, `vitest run`, `next build` |
 
-Currently **265 API tests** and **53 site tests**. A pre-commit hook runs the same thing locally.
+Currently **265 API tests** and **70 site tests**. A pre-commit hook runs the same thing locally.
 
 The same gates run on GitHub for every pull request and on `main` ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)), against a real PostgreSQL. CI also applies every migration, rolls them all back and re-applies them on an empty database, then runs `flask db check` to catch a model change committed without its migration. The tests build their tables directly, so this is the only place a broken migration shows up before production. `main` accepts only pull requests that pass, and Render deploys the API only after CI passes on `main`.
 

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { useAuth } from "@/components/admin/AuthProvider";
+import { useUnsavedChanges } from "@/components/admin/useUnsavedChanges";
 import { CONTROL_CLASSES, Field } from "@/components/admin/Field";
 import { MarkdownEditor } from "@/components/admin/MarkdownEditor";
 import { MediaPicker } from "@/components/admin/MediaPicker";
@@ -55,6 +56,10 @@ export function ArticleForm({ initial }: { initial?: ArticleDraft }) {
   const router = useRouter();
 
   const [draft, setDraft] = useState<ArticleDraft>(initial ?? BLANK);
+  // id and status change on save and publish; neither is something the
+  // editor could lose by leaving.
+  const editable = { ...draft, id: undefined, status: undefined };
+  const { touch, markSaved } = useUnsavedChanges(editable);
   const [categories, setCategories] = useState<Option[]>([]);
   const [teams, setTeams] = useState<Option[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -102,6 +107,7 @@ export function ArticleForm({ initial }: { initial?: ArticleDraft }) {
   }, []);
 
   async function save(): Promise<string | null> {
+    const sent = editable;
     const payload = {
       title: draft.title,
       summary: draft.summary || null,
@@ -130,6 +136,7 @@ export function ArticleForm({ initial }: { initial?: ArticleDraft }) {
       return null;
     }
 
+    markSaved(sent);
     const body: unknown = await response.json();
     const saved = (body as { data?: { id?: string; status?: string } }).data;
     if (saved?.id) setDraft((current) => ({ ...current, id: saved.id, status: saved.status }));
@@ -200,6 +207,8 @@ export function ArticleForm({ initial }: { initial?: ArticleDraft }) {
 
   return (
     <form
+      onInput={touch}
+      onClick={touch}
       onSubmit={(event) => {
         event.preventDefault();
         void onSave();

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "@/components/admin/AuthProvider";
+import { useUnsavedChanges } from "@/components/admin/useUnsavedChanges";
 import { CONTROL_CLASSES, Field } from "@/components/admin/Field";
 import { cn } from "@/lib/cn";
 import {
@@ -79,6 +80,8 @@ export function ResultForm({
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [squadState, setSquadState] = useState<"loading" | "ready" | "failed">("loading");
+  const entered = { ourScore, theirScore, report, motm, appearances, events };
+  const { touch, markSaved } = useUnsavedChanges(entered);
 
   useEffect(() => {
     let cancelled = false;
@@ -136,6 +139,7 @@ export function ResultForm({
 
   async function submit(formEvent: React.FormEvent<HTMLFormElement>) {
     formEvent.preventDefault();
+    const sent = entered;
     setBusy(true);
     setError(null);
     setNotice(null);
@@ -163,11 +167,12 @@ export function ResultForm({
       return;
     }
 
+    markSaved(sent);
     setNotice("Result saved. It is now on the website.");
   }
 
   return (
-    <form onSubmit={submit} className="space-y-8">
+    <form onInput={touch} onClick={touch} onSubmit={submit} className="space-y-8">
       <div className="grid items-end gap-4 sm:grid-cols-[1fr_auto_1fr]">
         <Field label={ourName} htmlFor="our_score">
           <input

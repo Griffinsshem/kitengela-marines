@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { JsonLd } from "@/components/ui/JsonLd";
+import { teamJsonLd } from "@/lib/structured-data";
 import { MatchCard } from "@/components/match/MatchCard";
 import { NewsCard } from "@/components/news/NewsCard";
 import { SquadGrid } from "@/components/team/SquadGrid";
@@ -81,6 +83,7 @@ export default async function TeamPage({ params }: Params) {
 
   return (
     <div data-team={accent}>
+      <JsonLd data={teamJsonLd(team.data)} />
       <TeamHero team={team.data} />
       {teams.ok ? <TeamSwitcher teams={teams.data} currentSlug={slug} /> : null}
 

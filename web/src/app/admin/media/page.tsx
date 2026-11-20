@@ -1,9 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { useAuth } from "@/components/admin/AuthProvider";
+import { LoadMore } from "@/components/admin/LoadMore";
+import { usePagedList } from "@/components/admin/usePagedList";
 import { MediaTabs } from "@/components/admin/MediaTabs";
 import { MediaUpload } from "@/components/admin/MediaUpload";
 import { type MediaAsset, fileSize } from "@/components/admin/media";
@@ -20,32 +22,20 @@ import { formatDate } from "@/lib/datetime";
  */
 export default function AdminMediaPage() {
   const { authFetch } = useAuth();
-  const [assets, setAssets] = useState<MediaAsset[] | null>(null);
-  const [failed, setFailed] = useState(false);
+  const {
+    rows: assets,
+    setRows: setAssets,
+    failed,
+    total,
+    hasMore,
+    loadMore,
+    loadingMore,
+    moreFailed,
+  } = usePagedList<MediaAsset>("/admin/media/assets", 60);
   const [message, setMessage] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [altDraft, setAltDraft] = useState("");
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      const response = await authFetch("/admin/media/assets?per_page=60");
-      if (cancelled) return;
-
-      if (!response.ok) {
-        setFailed(true);
-        return;
-      }
-      const body: unknown = await response.json();
-      if (!cancelled) setAssets((body as { data?: MediaAsset[] }).data ?? []);
-    }
-
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [authFetch]);
 
   async function saveAlt(asset: MediaAsset) {
     const response = await authFetch(`/admin/media/assets/${asset.id}`, {
@@ -188,6 +178,17 @@ export default function AdminMediaPage() {
             ))}
           </ul>
         )}
+        {assets && assets.length > 0 ? (
+          <LoadMore
+            shown={assets.length}
+            total={total}
+            hasMore={hasMore}
+            loading={loadingMore}
+            failed={moreFailed}
+            onLoadMore={() => void loadMore()}
+            noun="photos"
+          />
+        ) : null}
       </div>
     </div>
   );

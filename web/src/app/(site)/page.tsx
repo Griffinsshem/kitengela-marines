@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { JsonLd } from "@/components/ui/JsonLd";
+import { clubJsonLd } from "@/lib/structured-data";
 import { Hero } from "@/components/home/Hero";
 import { LatestNews } from "@/components/home/LatestNews";
 import { LatestResult } from "@/components/home/LatestResult";
@@ -42,6 +44,7 @@ export default async function HomePage() {
 
   return (
     <>
+      {club.ok && club.data ? <JsonLd data={clubJsonLd(club.data)} /> : null}
       <Hero
         club={club.ok ? club.data : null}
         image={club.ok ? (club.data?.hero_image ?? null) : null}

@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { useAuth } from "@/components/admin/AuthProvider";
+import { LoadMore } from "@/components/admin/LoadMore";
+import { usePagedList } from "@/components/admin/usePagedList";
 import { cn } from "@/lib/cn";
 import { formatDate, formatKickoff } from "@/lib/datetime";
 
@@ -48,31 +50,19 @@ const KIND_LABEL: Record<string, string> = {
 
 export default function AdminSubmissionsPage() {
   const { authFetch } = useAuth();
-  const [rows, setRows] = useState<Submission[] | null>(null);
-  const [failed, setFailed] = useState(false);
+  const {
+    rows,
+    setRows: setRows,
+    failed,
+    total,
+    hasMore,
+    loadMore,
+    loadingMore,
+    moreFailed,
+  } = usePagedList<Submission>("/admin/submissions", 50);
   const [open, setOpen] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      const response = await authFetch("/admin/submissions?per_page=50");
-      if (cancelled) return;
-
-      if (!response.ok) {
-        setFailed(true);
-        return;
-      }
-      const body: unknown = await response.json();
-      if (!cancelled) setRows((body as { data?: Submission[] }).data ?? []);
-    }
-
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [authFetch]);
 
   async function setStatus(submission: Submission, status: string) {
     setMessage(null);
@@ -267,6 +257,17 @@ export default function AdminSubmissionsPage() {
             })}
           </ul>
         )}
+        {rows && rows.length > 0 ? (
+          <LoadMore
+            shown={rows.length}
+            total={total}
+            hasMore={hasMore}
+            loading={loadingMore}
+            failed={moreFailed}
+            onLoadMore={() => void loadMore()}
+            noun="messages"
+          />
+        ) : null}
       </div>
     </div>
   );
