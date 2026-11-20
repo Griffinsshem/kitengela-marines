@@ -1,0 +1,35 @@
+# Weekly pull requests for outdated or vulnerable dependencies. Each one runs
+# through CI like any other change, so an upgrade that breaks something never
+# reaches main. Minor and patch updates are grouped to keep the noise down;
+# major versions arrive alone, because they are the ones that need reading.
+
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /api
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Africa/Nairobi
+    groups:
+      api-minor-and-patch:
+        update-types: [minor, patch]
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: npm
+    directory: /web
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Africa/Nairobi
+    groups:
+      web-minor-and-patch:
+        update-types: [minor, patch]
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
