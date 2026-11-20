@@ -84,6 +84,20 @@ def register_cli(app: Flask) -> None:
 
         click.echo(f"Club Admin created: {user.email}")
 
+    @seed.command("demo")
+    def seed_demo() -> None:
+        """Fill an empty database with a small demo club. Never in production."""
+        from app.config import get_settings
+        from app.demo_data import DemoDataRefusedError, build_demo_club
+
+        if get_settings().is_production:
+            raise click.ClickException("Demo data is never written to production.")
+        try:
+            build_demo_club()
+        except DemoDataRefusedError as error:
+            raise click.ClickException(str(error)) from error
+        click.echo("Demo club created.")
+
     app.cli.add_command(seed)
 
     @seed.command("reset-password")

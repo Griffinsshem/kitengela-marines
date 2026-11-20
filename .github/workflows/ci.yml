@@ -145,3 +145,101 @@ jobs:
       # whether or not the API is up, exactly as it must on Vercel.
       - name: Build
         run: npm run build
+
+  # The whole stack, as a visitor and an editor use it: PostgreSQL, the Flask
+  # API with demo data, and the production build of the site in Chromium.
+  # Also fails on serious or critical accessibility problems (axe-core).
+  e2e:
+    name: End-to-end
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: marines
+          POSTGRES_PASSWORD: marines
+          POSTGRES_DB: marines_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U marines"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      FLASK_APP: wsgi:app
+      APP_ENV: development
+      DATABASE_URL: postgresql+psycopg://marines:marines@localhost:5432/marines_e2e
+      SECRET_KEY: e2e-only-secret-key-padded-to-at-least-thirty-two-bytes
+      JWT_SECRET_KEY: e2e-only-jwt-secret-key-padded-to-at-least-thirty-two-bytes
+      JWT_COOKIE_SECURE: "0"
+      CORS_ORIGINS: http://localhost:3100
+      MEDIA_BACKEND: local
+      API_PUBLIC_URL: http://localhost:5000
+      # The suite signs in several times a minute from one address; the
+      # limits themselves are covered by the API tests.
+      RATELIMIT_ENABLED: "0"
+      NEXT_PUBLIC_API_URL: http://localhost:5000
+      NEXT_PUBLIC_SITE_URL: http://localhost:3100
+      E2E_ADMIN_EMAIL: admin@example.com
+      E2E_ADMIN_PASSWORD: e2e-admin-password-long
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: api/requirements*.txt
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Start the API with demo data
+        working-directory: api
+        run: |
+          pip install -r requirements.txt
+          flask db upgrade
+          flask seed roles
+          flask seed categories
+          flask seed admin --email "$E2E_ADMIN_EMAIL" --name "E2E Admin" --password "$E2E_ADMIN_PASSWORD"
+          flask seed demo
+          nohup gunicorn --bind 127.0.0.1:5000 --workers 2 wsgi:app > ../api.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            curl -sf http://localhost:5000/api/v1/health && exit 0
+            sleep 1
+          done
+          cat ../api.log
+          exit 1
+
+      - name: Build the site against it
+        working-directory: web
+        run: |
+          npm ci
+          npm run build
+
+      - name: Install Chromium
+        working-directory: web
+        run: npx playwright install --with-deps chromium
+
+      - name: Run end-to-end tests
+        working-directory: web
+        run: npx playwright test
+
+      - name: Keep the report and API log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report
+          path: |
+            web/playwright-report
+            web/test-results
+            api.log
+          retention-days: 7

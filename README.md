@@ -135,7 +135,9 @@ Runs, stopping at the first failure:
 | `api` | `ruff check`, `ruff format --check`, `mypy app`, `pytest` |
 | `web` | `eslint`, `tsc --noEmit`, `vitest run`, `next build` |
 
-Currently **265 API tests** and **70 site tests**. A pre-commit hook runs the same thing locally.
+Currently **268 API tests** and **70 site tests**. A pre-commit hook runs the same thing locally.
+
+**End-to-end** ([`web/e2e`](web/e2e)): Playwright drives the production build of the site against the real API and PostgreSQL, filled by `flask seed demo` (a small invented club; the command refuses to run in production). It covers the public pages, the contact form, signing in, and the unsaved-changes guard, and runs [axe-core](https://github.com/dequelabs/axe-core) on every page it visits, failing on any serious or critical accessibility violation. Its first run found white text on the men's green at 3.7:1 (WCAG asks for 4.5:1); those surfaces now use the darker ink green. To run it locally, start the API on port 5000 with demo data, build the site with `NEXT_PUBLIC_API_URL=http://localhost:5000`, then `npm run test:e2e`.
 
 The same gates run on GitHub for every pull request and on `main` ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)), against a real PostgreSQL. CI also applies every migration, rolls them all back and re-applies them on an empty database, then runs `flask db check` to catch a model change committed without its migration. The tests build their tables directly, so this is the only place a broken migration shows up before production. `main` accepts only pull requests that pass, and Render deploys the API only after CI passes on `main`.
 

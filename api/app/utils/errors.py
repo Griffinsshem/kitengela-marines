@@ -53,6 +53,14 @@ def register_error_handlers(app: Flask) -> None:
         ]
         return jsonify(_envelope("validation_error", "Request validation failed.", details)), 422
 
+    @app.errorhandler(429)
+    def handle_rate_limited(_error: HTTPException) -> tuple[Response, int]:
+        # Flask-Limiter's own description is the limit itself ("5 per 1
+        # minute"), which the sign-in page would show to the editor verbatim.
+        # Retry-After still goes out as a header for clients that read it.
+        message = "Too many attempts. Please wait a few minutes and try again."
+        return jsonify(_envelope("too_many_requests", message)), 429
+
     @app.errorhandler(HTTPException)
     def handle_http_exception(error: HTTPException) -> tuple[Response, int]:
         code = (error.name or "error").lower().replace(" ", "_")

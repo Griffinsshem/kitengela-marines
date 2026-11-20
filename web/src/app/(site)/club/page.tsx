@@ -135,7 +135,7 @@ export default async function ClubPage() {
               <li key={team.id} data-team={team.accent_key} className="reveal">
                 <Link
                   href={`/teams/${team.slug}`}
-                  className="group flex h-full min-h-40 flex-col justify-end bg-accent p-6 text-chalk transition hover:brightness-110"
+                  className="group flex h-full min-h-40 flex-col justify-end bg-accent-ink p-6 text-chalk transition hover:brightness-110"
                 >
                   <p className="font-display text-headline font-black uppercase leading-none">
                     {team.name}

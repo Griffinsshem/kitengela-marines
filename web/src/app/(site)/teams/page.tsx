@@ -30,7 +30,7 @@ export default async function TeamsPage() {
               <li key={team.id} data-team={toTeamAccentKey(team.accent_key)}>
                 <Link
                   href={`/teams/${team.slug}`}
-                  className="group flex h-full min-h-56 flex-col justify-end bg-accent p-6 text-chalk transition hover:brightness-110 sm:p-8"
+                  className="group flex h-full min-h-56 flex-col justify-end bg-accent-ink p-6 text-chalk transition hover:brightness-110 sm:p-8"
                 >
                   <p className="font-display text-headline font-black uppercase leading-none">
                     {team.name}
