@@ -42,6 +42,8 @@ Flask 3, SQLAlchemy 2, PostgreSQL, with Alembic migrations. 24 tables covering t
 - **The audit log** is written by a SQLAlchemy session listener, not by the routes, so no endpoint can forget to record a change.
 - **Uploads** are re-encoded on the way in, which strips the GPS coordinates phones record, and capped at 2560px on the long edge.
 - **HTML** submitted by editors is sanitised against an allow-list on save *and* again on read.
+- **Every response carries strict security headers**: a `default-src 'none'` Content Security Policy, no framing, no MIME sniffing, no referrer, and HSTS in production. The API serves data, never pages, so nothing it returns should ever run in a browser.
+- **Rate-limited requests say what to do** ("Too many attempts. Please wait a few minutes and try again.") with a `Retry-After` header, rather than echoing the limit.
 
 ### The site
 
@@ -80,6 +82,7 @@ flask db upgrade
 flask seed roles
 flask seed categories
 flask seed admin --email you@example.com --name "Your Name"
+flask seed demo   # optional: a small invented club, so every page has content
 flask --app wsgi run --port 5000
 ```
 
@@ -93,6 +96,8 @@ DATABASE_URL=postgresql+psycopg://marines:marines@localhost:5432/marines_dev
 JWT_COOKIE_SECURE=0
 CORS_ORIGINS=http://localhost:3000
 ```
+
+Rate-limit counters live in PostgreSQL by default, as in production. `RATELIMIT_STORAGE=memory` keeps them in the process instead, which is fine on a laptop and refused in production.
 
 > The `postgresql+psycopg://` prefix is required. The app refuses to start without it rather than guessing a driver.
 
@@ -115,10 +120,11 @@ It expects the API at `http://localhost:5000`; set `NEXT_PUBLIC_API_URL` to poin
 
 | Command | Purpose |
 | --- | --- |
-| `flask seed roles` | Insert the four roles |
+| `flask seed roles` | Insert the six roles (Club Admin, Media Officer, Team Manager, Coach, Player, Supporter) |
 | `flask seed categories` | Default news categories |
 | `flask seed admin` | Create a Club Admin |
-| `flask seed reset-password` | Change a password |
+| `flask seed reset-password` | Change a password and sign that account out everywhere |
+| `flask seed demo` | Fill an empty database with a demo club (two teams, a season, players, a fixture and a result). Refused in production |
 
 ---
 
@@ -134,6 +140,8 @@ Runs, stopping at the first failure:
 | --- | --- |
 | `api` | `ruff check`, `ruff format --check`, `mypy app`, `pytest` |
 | `web` | `eslint`, `tsc --noEmit`, `vitest run`, `next build` |
+
+CI adds three more: `pip-audit` and `npm audit` fail the build on a known vulnerability in what production installs, and the end-to-end job described below. Dependabot opens weekly pull requests for Python and npm updates (grouped minor and patch releases) and monthly ones for GitHub Actions, each gated by the same checks.
 
 Currently **268 API tests** and **70 site tests**. A pre-commit hook runs the same thing locally.
 
@@ -176,6 +184,10 @@ gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 60 --access-logfile - wsgi:a
 ```
 
 Environment variables: `APP_ENV=production`, `SECRET_KEY`, `JWT_SECRET_KEY`, `DATABASE_URL`, `JWT_COOKIE_SECURE=1`, `CORS_ORIGINS`, `API_PUBLIC_URL`, `MEDIA_BACKEND=cloudinary`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`.
+
+Production turns three behaviours on by itself, with no variable needed: database-backed rate limits (`RATELIMIT_STORAGE`), trusting Cloudflare's `True-Client-IP` header (`TRUST_CLIENT_IP_HEADER`), and applying migrations at startup (`AUTO_MIGRATE`). Each can be overridden, but the app refuses to start in production with per-process rate limits.
+
+Under **Settings → Build & Deploy**, *Auto-Deploy* is set to **After CI Checks Pass**, and the repository's *Protect main* ruleset requires the CI checks before anything merges.
 
 > `CORS_ORIGINS` must be the site's exact origin with no trailing slash. Only the production URL is allowed, so preview deployments cannot reach the live database.
 
@@ -222,6 +234,9 @@ In rough order of how much they matter.
 4. **No email notifications.** Contact and partnership messages are stored and read in the admin. An endpoint that emails on an anonymous request is a way to harass people through the club's own address.
 5. **Constraint naming.** No naming convention is configured, so PostgreSQL invents constraint names and Alembic cannot guess them when generating a downgrade. Three migrations needed names added by hand.
 6. **The health check does not verify storage.** A wrong Cloudinary credential passes startup and fails at the first upload, where a Media Officer sees only "an unexpected error occurred".
+7. **No two-factor sign-in.** Admin accounts are protected by Argon2id passwords, per-address and per-account rate limits and revocable sessions, but not a second factor.
+8. **The site's Content Security Policy allows inline scripts.** Nonces would remove that, but every page would then be rendered per request instead of served static, which on the free tier means slower pages for every visitor.
+9. **Backups are Neon's.** Point-in-time restore depends on the Neon plan's history window; nothing here exports the database separately.
 
 ---
 
