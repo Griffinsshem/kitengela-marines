@@ -51,7 +51,7 @@ jobs:
       TEST_DATABASE_URL: postgresql+psycopg://marines:marines@localhost:5432/marines_test
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v5
         with:
@@ -114,7 +114,7 @@ jobs:
         working-directory: web
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v4
         with:
@@ -188,7 +188,7 @@ jobs:
       E2E_ADMIN_PASSWORD: e2e-admin-password-long
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v5
         with:
