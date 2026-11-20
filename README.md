@@ -33,9 +33,11 @@ They share nothing but the HTTP API. The site can be rebuilt without touching th
 
 ### The API
 
-Flask 3, SQLAlchemy 2, PostgreSQL, with Alembic migrations. 23 tables covering the club and its teams, players and staff, competitions, fixtures, results and standings, media, news, sponsors, public submissions, and an audit log.
+Flask 3, SQLAlchemy 2, PostgreSQL, with Alembic migrations. 24 tables covering the club and its teams, players and staff, competitions, fixtures, results and standings, media, news, sponsors, public submissions, and an audit log.
 
 - **Authentication** is JWT. A short-lived access token is returned in the response body; the refresh token is an HttpOnly cookie with a CSRF double-submit token beside it.
+- **Sessions can be revoked.** Every token carries the account's session version; changing or resetting a password, or deactivating the account, bumps it and signs that account out on every device.
+- **Rate limits see real visitors.** Render's proxy makes every request look like it came from 127.0.0.1, so limits are keyed on Cloudflare's `True-Client-IP` header (not the spoofable `X-Forwarded-For`), counted in PostgreSQL so both gunicorn workers share them and a cold start doesn't reset them. Sign-in is also limited per account, counting only failures, and an unknown email costs the same Argon2 work as a real one so timing can't reveal who has an account.
 - **Authorisation** is capability-based and scoped per team. A coach of one team cannot edit another team's squad.
 - **The audit log** is written by a SQLAlchemy session listener, not by the routes, so no endpoint can forget to record a change.
 - **Uploads** are re-encoded on the way in, which strips the GPS coordinates phones record, and capped at 2560px on the long edge.
@@ -129,7 +131,7 @@ Runs, stopping at the first failure:
 | `api` | `ruff check`, `ruff format --check`, `mypy app`, `pytest` |
 | `web` | `eslint`, `tsc --noEmit`, `vitest run`, `next build` |
 
-Currently **249 API tests** and **53 site tests**. A pre-commit hook runs the same thing locally.
+Currently **264 API tests** and **53 site tests**. A pre-commit hook runs the same thing locally.
 
 The same gates run on GitHub for every pull request and on `main` ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)), against a real PostgreSQL. CI also applies every migration, rolls them all back and re-applies them on an empty database, then runs `flask db check` to catch a model change committed without its migration. The tests build their tables directly, so this is the only place a broken migration shows up before production. `main` accepts only pull requests that pass, and Render deploys the API only after CI passes on `main`.
 

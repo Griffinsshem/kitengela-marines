@@ -31,8 +31,16 @@ class Settings(BaseSettings):
     JWT_COOKIE_SECURE: bool = True
 
     CORS_ORIGINS: str = ""
-    RATELIMIT_STORAGE_URI: str = "memory://"
+    # Where rate-limit counters live. "database" shares them across gunicorn
+    # workers and keeps them through restarts; "memory" is per-process and is
+    # for tests and local work only.
+    RATELIMIT_STORAGE: Literal["database", "memory"] = "database"
     RATELIMIT_ENABLED: bool = True
+
+    # Whether to read the visitor's address from Cloudflare's True-Client-IP
+    # header (see app.security.client_ip). Unset means: only in production,
+    # where Render's Cloudflare edge always sets it.
+    TRUST_CLIENT_IP_HEADER: bool | None = None
 
     MEDIA_BACKEND: Literal["local", "cloudinary"] = "local"
     MEDIA_LOCAL_DIR: str = "uploads"
@@ -48,6 +56,16 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.APP_ENV == "production"
+
+    @property
+    def trust_client_ip_header(self) -> bool:
+        if self.TRUST_CLIENT_IP_HEADER is not None:
+            return self.TRUST_CLIENT_IP_HEADER
+        return self.is_production
+
+    @property
+    def ratelimit_storage_uri(self) -> str:
+        return "appdb://" if self.RATELIMIT_STORAGE == "database" else "memory://"
 
     @property
     def cors_origin_list(self) -> list[str]:
@@ -81,6 +99,11 @@ class Settings(BaseSettings):
 
         if not self.cors_origin_list:
             raise ValueError("CORS_ORIGINS must list the production frontend origin.")
+
+        # Two gunicorn workers each with their own memory would double every
+        # limit, and every cold start would forgive every attempt.
+        if self.RATELIMIT_STORAGE != "database":
+            raise ValueError("RATELIMIT_STORAGE must be 'database' in production.")
 
         if not self.JWT_COOKIE_SECURE:
             raise ValueError("JWT_COOKIE_SECURE must be true in production.")

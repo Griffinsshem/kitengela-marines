@@ -168,3 +168,63 @@ def test_a_deactivated_account_cannot_sign_in(
         "/api/v1/auth/login", json={"email": "officer@example.com", "password": password}
     )
     assert refused.status_code == 401
+
+
+def test_a_password_reset_signs_the_account_out_everywhere(
+    session: object, client: FlaskClient, owner: dict[str, str]
+) -> None:
+    created = client.post(
+        "/api/v1/admin/users",
+        json={
+            "email": "officer@example.com",
+            "full_name": "Media Officer",
+            "role": "media_officer",
+        },
+        headers=owner,
+    )
+    user_id = created.get_json()["data"]["id"]
+    old_password = created.get_json()["temporary_password"]
+    token = client.post(
+        "/api/v1/auth/login", json={"email": "officer@example.com", "password": old_password}
+    ).get_json()["access_token"]
+    officer = {"Authorization": f"Bearer {token}"}
+    assert client.get("/api/v1/auth/me", headers=officer).status_code == 200
+
+    reset = client.post(f"/api/v1/admin/users/{user_id}/password", headers=owner)
+    new_password = reset.get_json()["temporary_password"]
+
+    # Whoever held the old password, and the session it opened, is out.
+    assert client.get("/api/v1/auth/me", headers=officer).status_code == 401
+    assert client.post("/api/v1/auth/refresh").status_code == 401
+    # The new password works straight away, even within the same second.
+    signed_in = client.post(
+        "/api/v1/auth/login", json={"email": "officer@example.com", "password": new_password}
+    )
+    assert signed_in.status_code == 200
+    fresh = {"Authorization": f"Bearer {signed_in.get_json()['access_token']}"}
+    assert client.get("/api/v1/auth/me", headers=fresh).status_code == 200
+
+
+def test_reactivating_an_account_does_not_revive_its_old_sessions(
+    session: object, client: FlaskClient, owner: dict[str, str]
+) -> None:
+    created = client.post(
+        "/api/v1/admin/users",
+        json={
+            "email": "officer@example.com",
+            "full_name": "Media Officer",
+            "role": "media_officer",
+        },
+        headers=owner,
+    )
+    user_id = created.get_json()["data"]["id"]
+    password = created.get_json()["temporary_password"]
+    token = client.post(
+        "/api/v1/auth/login", json={"email": "officer@example.com", "password": password}
+    ).get_json()["access_token"]
+    officer = {"Authorization": f"Bearer {token}"}
+
+    client.patch(f"/api/v1/admin/users/{user_id}", json={"is_active": False}, headers=owner)
+    client.patch(f"/api/v1/admin/users/{user_id}", json={"is_active": True}, headers=owner)
+
+    assert client.get("/api/v1/auth/me", headers=officer).status_code == 401
