@@ -77,6 +77,14 @@ jobs:
       - name: Tests
         run: pytest
 
+      # Known vulnerabilities in what production installs. A new advisory
+      # fails CI even when no code changed, on purpose: the fix is an
+      # upgrade, and Dependabot opens one as a pull request each week.
+      - name: Vulnerable dependencies
+        run: |
+          pip install pip-audit
+          pip-audit -r requirements.txt --progress-spinner off
+
       # The tests build their tables directly, so they cannot catch a broken
       # migration. Production can: Render runs these against the live
       # database. Apply, roll back and re-apply every migration on an empty
@@ -125,6 +133,12 @@ jobs:
 
       - name: Tests
         run: npm test
+
+      # Production dependencies only, high severity and above. Advisories in
+      # build and test tools never reach visitors and would block every
+      # pull request for no benefit.
+      - name: Vulnerable dependencies
+        run: npm audit --omit=dev --audit-level=high
 
       # No API is running here, so pages render their "could not be loaded"
       # states at build time. That is deliberate: the build must succeed
