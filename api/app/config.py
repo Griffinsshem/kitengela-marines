@@ -42,6 +42,10 @@ class Settings(BaseSettings):
     # where Render's Cloudflare edge always sets it.
     TRUST_CLIENT_IP_HEADER: bool | None = None
 
+    # Apply pending migrations when the server starts (app.boot_migrations).
+    # Unset means: only in production, which has no other step that runs them.
+    AUTO_MIGRATE: bool | None = None
+
     MEDIA_BACKEND: Literal["local", "cloudinary"] = "local"
     MEDIA_LOCAL_DIR: str = "uploads"
     MEDIA_MAX_UPLOAD_MB: int = Field(default=8, ge=1, le=50)
@@ -61,6 +65,12 @@ class Settings(BaseSettings):
     def trust_client_ip_header(self) -> bool:
         if self.TRUST_CLIENT_IP_HEADER is not None:
             return self.TRUST_CLIENT_IP_HEADER
+        return self.is_production
+
+    @property
+    def auto_migrate(self) -> bool:
+        if self.AUTO_MIGRATE is not None:
+            return self.AUTO_MIGRATE
         return self.is_production
 
     @property

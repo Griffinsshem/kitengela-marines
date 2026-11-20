@@ -131,7 +131,7 @@ Runs, stopping at the first failure:
 | `api` | `ruff check`, `ruff format --check`, `mypy app`, `pytest` |
 | `web` | `eslint`, `tsc --noEmit`, `vitest run`, `next build` |
 
-Currently **264 API tests** and **53 site tests**. A pre-commit hook runs the same thing locally.
+Currently **265 API tests** and **53 site tests**. A pre-commit hook runs the same thing locally.
 
 The same gates run on GitHub for every pull request and on `main` ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)), against a real PostgreSQL. CI also applies every migration, rolls them all back and re-applies them on an empty database, then runs `flask db check` to catch a model change committed without its migration. The tests build their tables directly, so this is the only place a broken migration shows up before production. `main` accepts only pull requests that pass, and Render deploys the API only after CI passes on `main`.
 
@@ -151,14 +151,9 @@ Two habits that have caught real bugs:
 | Images | Cloudinary | Free tier |
 | Site | Vercel | Free tier |
 
-Pushing to `main` deploys both. **Migrations are not run automatically** — apply them from a developer's machine *before* pushing:
+Pushing to `main` deploys both. **The API applies its own migrations when it starts** ([`app/boot_migrations.py`](api/app/boot_migrations.py)): Render's pre-deploy step is a paid feature, and a hand-run `flask db upgrade` is one forgotten step away from shipping code against a schema that lacks its columns. A PostgreSQL advisory lock makes the two gunicorn workers take turns, so exactly one migrates and the other finds nothing to do. If a migration fails, the new deploy never becomes healthy and Render keeps the previous one serving.
 
-```bash
-cd api && source .venv/bin/activate
-DATABASE_URL="the-neon-url" flask db upgrade
-```
-
-That order matters. If the code ships before the column exists, the live site breaks for the minute in between.
+Migrations must therefore stay safe to run against the live database while the old code is still serving it: add columns as nullable or with a server default, and drop things only in a later release. Applying one by hand still works (`DATABASE_URL="the-neon-url" flask db upgrade`); the startup step then has nothing to do.
 
 ### Render settings
 
