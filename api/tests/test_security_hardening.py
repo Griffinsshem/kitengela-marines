@@ -257,3 +257,8 @@ def test_api_responses_cannot_be_framed_sniffed_or_run(client: FlaskClient) -> N
     assert response.headers["Referrer-Policy"] == "no-referrer"
     # Never outside production: it would pin a developer's localhost to HTTPS.
     assert "Strict-Transport-Security" not in response.headers
+
+
+def test_migrations_run_at_startup_only_where_nothing_else_runs_them() -> None:
+    assert _settings().auto_migrate is False
+    assert _settings(AUTO_MIGRATE=True).auto_migrate is True
