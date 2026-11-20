@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { JsonLd } from "@/components/ui/JsonLd";
+import { matchJsonLd } from "@/lib/structured-data";
 import { UnavailableState } from "@/components/ui/EmptyState";
 import { Section } from "@/components/ui/Section";
 import { toTeamAccentKey } from "@/config/teams";
@@ -57,6 +59,7 @@ export default async function MatchPage({ params }: Params) {
 
   return (
     <div data-team={toTeamAccentKey(match.team.accent_key)}>
+      <JsonLd data={matchJsonLd(match)} />
       <section className="bg-pitch text-chalk">
         <div className="mx-auto max-w-5xl px-5 py-12 text-center sm:px-8 sm:py-16">
           <p className="text-meta font-semibold uppercase tracking-widest text-accent-glow">

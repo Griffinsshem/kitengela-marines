@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
-import { useAuth } from "@/components/admin/AuthProvider";
+import { LoadMore } from "@/components/admin/LoadMore";
+import { usePagedList } from "@/components/admin/usePagedList";
 import type { MediaAsset } from "@/components/admin/media";
 
 /**
@@ -24,40 +25,25 @@ export function MediaPicker({
   label: string;
   onSelect: (asset: MediaAsset) => void;
 }) {
-  const { authFetch } = useAuth();
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [open, setOpen] = useState(false);
-  const [assets, setAssets] = useState<MediaAsset[] | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    let cancelled = false;
-
-    async function load() {
-      const response = await authFetch("/admin/media/assets?per_page=60");
-      if (cancelled) return;
-
-      if (!response.ok) {
-        setAssets([]);
-        return;
-      }
-      const body: unknown = await response.json();
-      if (!cancelled) setAssets((body as { data?: MediaAsset[] }).data ?? []);
-    }
-
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [authFetch, open]);
+  // Loaded the first time the dialog opens, not on every form that offers it.
+  const [opened, setOpened] = useState(false);
+  const {
+    rows: assets,
+    failed,
+    total,
+    hasMore,
+    loadMore,
+    loadingMore,
+    moreFailed,
+  } = usePagedList<MediaAsset>("/admin/media/assets", 60, opened);
 
   function show() {
-    setOpen(true);
+    setOpened(true);
     dialogRef.current?.showModal();
   }
 
   function hide() {
-    setOpen(false);
     dialogRef.current?.close();
   }
 
@@ -73,7 +59,6 @@ export function MediaPicker({
 
       <dialog
         ref={dialogRef}
-        onClose={() => setOpen(false)}
         className="w-full max-w-4xl border border-line bg-chalk p-0 backdrop:bg-pitch/70"
       >
         <div className="flex items-center justify-between border-b border-line px-5 py-4">
@@ -84,7 +69,9 @@ export function MediaPicker({
         </div>
 
         <div className="max-h-[70vh] overflow-y-auto p-5">
-          {assets === null ? (
+          {failed ? (
+            <p className="text-muted">The library could not be loaded just now.</p>
+          ) : assets === null ? (
             <p className="text-muted">Loading…</p>
           ) : assets.length === 0 ? (
             <p className="text-muted">
@@ -117,6 +104,17 @@ export function MediaPicker({
               ))}
             </ul>
           )}
+          {assets && assets.length > 0 ? (
+            <LoadMore
+              shown={assets.length}
+              total={total}
+              hasMore={hasMore}
+              loading={loadingMore}
+              failed={moreFailed}
+              onLoadMore={() => void loadMore()}
+              noun="photos"
+            />
+          ) : null}
         </div>
       </dialog>
     </>

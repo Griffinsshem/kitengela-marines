@@ -1,9 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { useAuth } from "@/components/admin/AuthProvider";
+import { LoadMore } from "@/components/admin/LoadMore";
+import { usePagedList } from "@/components/admin/usePagedList";
 import { CONTROL_CLASSES, Field } from "@/components/admin/Field";
 import { MediaTabs } from "@/components/admin/MediaTabs";
 
@@ -26,8 +28,16 @@ type Video = {
  */
 export default function AdminVideosPage() {
   const { authFetch } = useAuth();
-  const [videos, setVideos] = useState<Video[] | null>(null);
-  const [failed, setFailed] = useState(false);
+  const {
+    rows: videos,
+    setRows: setVideos,
+    failed,
+    total,
+    hasMore,
+    loadMore,
+    loadingMore,
+    moreFailed,
+  } = usePagedList<Video>("/admin/videos", 50);
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
   const [publishedOn, setPublishedOn] = useState("");
@@ -35,26 +45,6 @@ export default function AdminVideosPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      const response = await authFetch("/admin/videos?per_page=50");
-      if (cancelled) return;
-
-      if (!response.ok) {
-        setFailed(true);
-        return;
-      }
-      const body: unknown = await response.json();
-      if (!cancelled) setVideos((body as { data?: Video[] }).data ?? []);
-    }
-
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [authFetch]);
 
   async function add(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -245,6 +235,17 @@ export default function AdminVideosPage() {
             ))}
           </ul>
         )}
+        {videos && videos.length > 0 ? (
+          <LoadMore
+            shown={videos.length}
+            total={total}
+            hasMore={hasMore}
+            loading={loadingMore}
+            failed={moreFailed}
+            onLoadMore={() => void loadMore()}
+            noun="videos"
+          />
+        ) : null}
       </div>
     </div>
   );

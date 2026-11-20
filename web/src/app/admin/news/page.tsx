@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 
-import { useAuth } from "@/components/admin/AuthProvider";
+import { LoadMore } from "@/components/admin/LoadMore";
+import { usePagedList } from "@/components/admin/usePagedList";
 import { formatDate } from "@/lib/datetime";
 
 type Row = {
@@ -22,30 +22,16 @@ type Row = {
  * often than to admire what is already live, so drafts lead.
  */
 export default function AdminNewsPage() {
-  const { authFetch } = useAuth();
-  const [rows, setRows] = useState<Row[] | null>(null);
-  const [failed, setFailed] = useState(false);
+  const {
+    rows,
+    failed,
+    total,
+    hasMore,
+    loadMore,
+    loadingMore,
+    moreFailed,
+  } = usePagedList<Row>("/admin/articles", 50);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      const response = await authFetch("/admin/articles?per_page=50");
-      if (cancelled) return;
-
-      if (!response.ok) {
-        setFailed(true);
-        return;
-      }
-      const body: unknown = await response.json();
-      if (!cancelled) setRows((body as { data?: Row[] }).data ?? []);
-    }
-
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [authFetch]);
 
   const drafts = rows?.filter((row) => row.status !== "published") ?? [];
   const published = rows?.filter((row) => row.status === "published") ?? [];
@@ -86,6 +72,15 @@ export default function AdminNewsPage() {
         <div className="mt-8 space-y-10">
           <ArticleGroup title="Drafts and scheduled" rows={drafts} />
           <ArticleGroup title="Published" rows={published} />
+          <LoadMore
+            shown={rows.length}
+            total={total}
+            hasMore={hasMore}
+            loading={loadingMore}
+            failed={moreFailed}
+            onLoadMore={() => void loadMore()}
+            noun="articles"
+          />
         </div>
       )}
     </div>

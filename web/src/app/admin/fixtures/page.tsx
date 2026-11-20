@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 
-import { useAuth } from "@/components/admin/AuthProvider";
+import { LoadMore } from "@/components/admin/LoadMore";
+import { usePagedList } from "@/components/admin/usePagedList";
 import { formatDayMonth, formatKickoff, formatMatchDate, nairobiDayKey } from "@/lib/datetime";
 import { likelyDuplicates } from "@/lib/deletion";
 
@@ -27,35 +27,23 @@ type Row = {
  * is looking for one particular match, and remembering whether it has been
  * played yet is not their job.
  *
+ * The list loads a page at a time; "Load more" fetches older matches.
+ *
  * Matches that look entered twice (same team, opponent and day) are marked,
  * so a duplicate result is found by scanning the list rather than by a
  * supporter noticing it on the website.
  */
 export default function AdminFixturesPage() {
-  const { authFetch } = useAuth();
-  const [rows, setRows] = useState<Row[] | null>(null);
-  const [failed, setFailed] = useState(false);
+  const {
+    rows,
+    failed,
+    total,
+    hasMore,
+    loadMore,
+    loadingMore,
+    moreFailed,
+  } = usePagedList<Row>("/admin/fixtures", 100);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      const response = await authFetch("/admin/fixtures?per_page=100");
-      if (cancelled) return;
-
-      if (!response.ok) {
-        setFailed(true);
-        return;
-      }
-      const body: unknown = await response.json();
-      if (!cancelled) setRows((body as { data?: Row[] }).data ?? []);
-    }
-
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [authFetch]);
 
   const upcoming = rows?.filter((row) => !row.is_completed) ?? [];
   const played = rows?.filter((row) => row.is_completed) ?? [];
@@ -98,6 +86,15 @@ export default function AdminFixturesPage() {
           ) : null}
           <FixtureGroup title="To play" rows={upcoming} duplicates={duplicates} />
           <FixtureGroup title="Played" rows={played} duplicates={duplicates} />
+          <LoadMore
+            shown={rows.length}
+            total={total}
+            hasMore={hasMore}
+            loading={loadingMore}
+            failed={moreFailed}
+            onLoadMore={() => void loadMore()}
+            noun="fixtures"
+          />
         </div>
       )}
     </div>

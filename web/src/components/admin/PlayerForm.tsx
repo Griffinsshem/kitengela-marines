@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 
 import { useAuth } from "@/components/admin/AuthProvider";
+import { useUnsavedChanges } from "@/components/admin/useUnsavedChanges";
 import { CONTROL_CLASSES, Field } from "@/components/admin/Field";
 import { MediaPicker } from "@/components/admin/MediaPicker";
 
@@ -71,6 +72,8 @@ export function PlayerForm({ initial }: { initial?: PlayerDraft }) {
   const router = useRouter();
 
   const [draft, setDraft] = useState<PlayerDraft>(initial ?? BLANK_PLAYER);
+  const editable = { ...draft, id: undefined };
+  const { touch, markSaved } = useUnsavedChanges(editable);
   const [teams, setTeams] = useState<Team[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -101,6 +104,7 @@ export function PlayerForm({ initial }: { initial?: PlayerDraft }) {
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const sent = editable;
     setBusy(true);
     setError(null);
     setNotice(null);
@@ -157,6 +161,7 @@ export function PlayerForm({ initial }: { initial?: PlayerDraft }) {
       return;
     }
 
+    markSaved(sent);
     const body: unknown = await response.json();
     const saved = (body as { data?: { id?: string } }).data;
 
@@ -168,7 +173,7 @@ export function PlayerForm({ initial }: { initial?: PlayerDraft }) {
   }
 
   return (
-    <form onSubmit={submit} className="space-y-8">
+    <form onInput={touch} onClick={touch} onSubmit={submit} className="space-y-8">
       <section className="space-y-6">
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {isNew ? (

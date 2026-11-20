@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { useAuth } from "@/components/admin/AuthProvider";
+import { LoadMore } from "@/components/admin/LoadMore";
+import { usePagedList } from "@/components/admin/usePagedList";
 import { CONTROL_CLASSES, Field } from "@/components/admin/Field";
 import { MediaTabs } from "@/components/admin/MediaTabs";
 import { formatDate } from "@/lib/datetime";
@@ -21,33 +23,20 @@ type Gallery = {
 export default function AdminGalleriesPage() {
   const { authFetch } = useAuth();
   const router = useRouter();
-  const [galleries, setGalleries] = useState<Gallery[] | null>(null);
-  const [failed, setFailed] = useState(false);
+  const {
+    rows: galleries,
+    failed,
+    total,
+    hasMore,
+    loadMore,
+    loadingMore,
+    moreFailed,
+  } = usePagedList<Gallery>("/admin/galleries", 50);
   const [title, setTitle] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      const response = await authFetch("/admin/galleries?per_page=50");
-      if (cancelled) return;
-
-      if (!response.ok) {
-        setFailed(true);
-        return;
-      }
-      const body: unknown = await response.json();
-      if (!cancelled) setGalleries((body as { data?: Gallery[] }).data ?? []);
-    }
-
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [authFetch]);
 
   async function create(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -166,6 +155,17 @@ export default function AdminGalleriesPage() {
             ))}
           </ul>
         )}
+        {galleries && galleries.length > 0 ? (
+          <LoadMore
+            shown={galleries.length}
+            total={total}
+            hasMore={hasMore}
+            loading={loadingMore}
+            failed={moreFailed}
+            onLoadMore={() => void loadMore()}
+            noun="galleries"
+          />
+        ) : null}
       </div>
     </div>
   );

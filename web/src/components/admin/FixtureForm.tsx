@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/admin/AuthProvider";
+import { useUnsavedChanges } from "@/components/admin/useUnsavedChanges";
 import { CONTROL_CLASSES, Field } from "@/components/admin/Field";
 
 /**
@@ -54,6 +55,8 @@ export function FixtureForm({ initial }: { initial?: FixtureDraft }) {
   const router = useRouter();
 
   const [draft, setDraft] = useState<FixtureDraft>(initial ?? BLANK_FIXTURE);
+  const editable = { ...draft, id: undefined };
+  const { touch, markSaved } = useUnsavedChanges(editable);
   const [teams, setTeams] = useState<Option[]>([]);
   const [seasons, setSeasons] = useState<Option[]>([]);
   const [opponents, setOpponents] = useState<Option[]>([]);
@@ -144,6 +147,7 @@ export function FixtureForm({ initial }: { initial?: FixtureDraft }) {
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const sent = editable;
     setBusy(true);
     setError(null);
     setNotice(null);
@@ -189,6 +193,7 @@ export function FixtureForm({ initial }: { initial?: FixtureDraft }) {
       return;
     }
 
+    markSaved(sent);
     const body: unknown = await response.json();
     const saved = (body as { data?: { id?: string } }).data;
 
@@ -200,7 +205,7 @@ export function FixtureForm({ initial }: { initial?: FixtureDraft }) {
   }
 
   return (
-    <form onSubmit={submit} className="space-y-6">
+    <form onInput={touch} onClick={touch} onSubmit={submit} className="space-y-6">
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {isNew ? (
           <>
