@@ -1,0 +1,130 @@
+# The same gates as ./check.sh, run on every pull request and on main.
+#
+# Render deploys the API only after these checks pass on main, and main only
+# accepts pull requests whose checks have passed, so nothing reaches
+# production without them. The local pre-commit hook is a convenience; this
+# is the gate.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A newer push to the same branch makes an older run pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  api:
+    name: API
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        # The tests need real PostgreSQL: constraints, cascades and partial
+        # indexes behave differently in anything else.
+        image: postgres:16
+        env:
+          POSTGRES_USER: marines
+          POSTGRES_PASSWORD: marines
+          POSTGRES_DB: marines_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U marines"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    defaults:
+      run:
+        working-directory: api
+
+    env:
+      TEST_DATABASE_URL: postgresql+psycopg://marines:marines@localhost:5432/marines_test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: api/.python-version
+          cache: pip
+          cache-dependency-path: api/requirements*.txt
+
+      - name: Install
+        run: pip install -r requirements-dev.txt
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Format
+        run: ruff format --check .
+
+      - name: Types
+        run: mypy app
+
+      - name: Tests
+        run: pytest
+
+      # The tests build their tables directly, so they cannot catch a broken
+      # migration. Production can: Render runs these against the live
+      # database. Apply, roll back and re-apply every migration on an empty
+      # database, then confirm the models and migrations agree.
+      - name: Migrations
+        env:
+          FLASK_APP: wsgi:app
+          APP_ENV: development
+          DATABASE_URL: postgresql+psycopg://marines:marines@localhost:5432/marines_migrations
+          SECRET_KEY: ci-only-secret-key-padded-to-at-least-thirty-two-bytes
+          JWT_SECRET_KEY: ci-only-jwt-secret-key-padded-to-at-least-thirty-two-bytes
+          PGPASSWORD: marines
+        run: |
+          psql -h localhost -U marines -d marines_test -c "CREATE DATABASE marines_migrations"
+          flask db upgrade
+          flask db downgrade base
+          flask db upgrade
+          flask db check
+
+  web:
+    name: Website
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Types
+        run: npm run typecheck
+
+      - name: Tests
+        run: npm test
+
+      # No API is running here, so pages render their "could not be loaded"
+      # states at build time. That is deliberate: the build must succeed
+      # whether or not the API is up, exactly as it must on Vercel.
+      - name: Build
+        run: npm run build
