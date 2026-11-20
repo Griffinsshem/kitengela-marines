@@ -139,6 +139,22 @@ def test_one_visitor_hitting_the_limit_does_not_lock_out_another(
     assert _attempt(behind_cloudflare, "198.51.100.20", PASSWORD) == 200
 
 
+def test_a_rate_limited_sign_in_says_what_to_do_in_words(
+    behind_cloudflare: FlaskClient, account: User
+) -> None:
+    for _ in range(5):
+        _attempt(behind_cloudflare, "203.0.113.7")
+    response = behind_cloudflare.post(
+        "/api/v1/auth/login",
+        json={"email": "admin@example.com", "password": "wrong"},
+        headers={"True-Client-IP": "203.0.113.7"},
+    )
+
+    assert response.status_code == 429
+    assert response.get_json()["error"]["message"].startswith("Too many attempts")
+    assert "Retry-After" in response.headers
+
+
 def test_a_forged_forwarded_for_header_does_not_dodge_the_limit(
     behind_cloudflare: FlaskClient, account: User
 ) -> None:

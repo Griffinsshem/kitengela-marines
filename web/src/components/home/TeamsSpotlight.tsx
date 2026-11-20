@@ -35,16 +35,16 @@ export function TeamsSpotlight({ result }: { result: ApiResult<Team[]> }) {
               <li key={team.id} data-team={toTeamAccentKey(team.accent_key)}>
                 <Link
                   href={`/teams/${team.slug}`}
-                  className="group flex h-full min-h-56 flex-col justify-end bg-accent p-6 text-chalk transition hover:brightness-110 sm:p-8"
+                  className="group flex h-full min-h-56 flex-col justify-end bg-accent-ink p-6 text-chalk transition hover:brightness-110 sm:p-8"
                 >
-                  <p className="text-meta font-semibold uppercase tracking-widest text-chalk/80">
+                  <p className="text-meta font-semibold uppercase tracking-widest text-chalk">
                     {GENDER_LABEL[team.gender] ?? "Team"}
                   </p>
                   <p className="mt-2 font-display text-headline font-black uppercase leading-none">
                     {team.name}
                   </p>
                   {team.summary ? (
-                    <p className="mt-3 max-w-sm text-chalk/85">{team.summary}</p>
+                    <p className="mt-3 max-w-sm text-chalk">{team.summary}</p>
                   ) : null}
                   <p className="mt-5 font-semibold underline-offset-4 group-hover:underline">
                     Squad and fixtures

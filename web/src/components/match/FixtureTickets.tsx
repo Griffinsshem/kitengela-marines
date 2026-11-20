@@ -231,7 +231,7 @@ function Ticket({ fixture, matchday }: { fixture: Fixture; matchday: boolean }) 
         aria-hidden="true"
         className="absolute -bottom-2.5 left-[calc(5.5rem-0.625rem)] z-10 size-5 rounded-full bg-pitch sm:left-[calc(6.5rem-0.625rem)]"
       />
-      <header className="flex items-center justify-between gap-3 bg-accent px-5 py-2 text-meta font-semibold text-chalk">
+      <header className="flex items-center justify-between gap-3 bg-accent-ink px-5 py-2 text-meta font-semibold text-chalk">
         <span className="truncate">{fixture.competition.short_name}</span>
         <span className="flex shrink-0 items-center gap-2">
           {matchday ? (
