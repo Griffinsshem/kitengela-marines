@@ -53,7 +53,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           # The minor version Render runs (api/.python-version pins 3.12.7).
           # Not the exact patch: hosted runners do not carry every patch
@@ -190,7 +190,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
