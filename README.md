@@ -1,11 +1,21 @@
 # Kitengela Marines FC
 
+[![CI](https://github.com/Griffinsshem/kitengela-marines/actions/workflows/ci.yml/badge.svg)](https://github.com/Griffinsshem/kitengela-marines/actions/workflows/ci.yml)
+
 The official website and content management system for **Kitengela Marines FC**, a football club from Kitengela, Kajiado County, Kenya. Home of Kitengela Marines (men) and Marines Starlets (women).
 
 - **Site:** <https://kitengela-marines.vercel.app>
 - **API:** <https://kitengela-marines-api.onrender.com>
 
 Everything supporters see comes from the database. The club publishes news, squads, fixtures, results, photographs and video through an admin area; no part of the public site is edited by changing code.
+
+![The homepage: the club's name over a team photograph, with the next match shown as a matchday ticket and a countdown to kick-off](docs/screenshots/home.jpg)
+
+| A team's season, derived from its results | A match page |
+| --- | --- |
+| ![Season so far: a 33% win-rate ring, the last five results as W, L, L, D, D, and the season's totals](docs/screenshots/team-season.jpg) | ![Blackstars 1–3 Kitengela Marines, with date, kick-off, venue, season and player of the match](docs/screenshots/match.jpg) |
+
+Screenshots are of the live site, with the club's real data.
 
 ---
 
@@ -119,7 +129,9 @@ Runs, stopping at the first failure:
 | `api` | `ruff check`, `ruff format --check`, `mypy app`, `pytest` |
 | `web` | `eslint`, `tsc --noEmit`, `vitest run`, `next build` |
 
-Currently **249 API tests** and **53 site tests**. A pre-commit hook runs the same thing.
+Currently **249 API tests** and **53 site tests**. A pre-commit hook runs the same thing locally.
+
+The same gates run on GitHub for every pull request and on `main` ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)), against a real PostgreSQL. CI also applies every migration, rolls them all back and re-applies them on an empty database, then runs `flask db check` to catch a model change committed without its migration. The tests build their tables directly, so this is the only place a broken migration shows up before production. `main` accepts only pull requests that pass, and Render deploys the API only after CI passes on `main`.
 
 Two habits that have caught real bugs:
 
